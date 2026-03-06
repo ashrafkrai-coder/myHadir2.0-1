@@ -399,6 +399,69 @@
       flex-wrap: wrap;
     }
 
+    .quick-links {
+      margin-top: 6px;
+      border: 1px solid color-mix(in srgb, var(--brand) 24%, var(--line));
+      border-radius: 14px;
+      padding: 12px;
+      background: linear-gradient(180deg, rgba(13, 35, 58, 0.9) 0%, rgba(9, 24, 40, 0.95) 100%);
+    }
+
+    .quick-links-head {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      margin-bottom: 8px;
+    }
+
+    .quick-links-head h4 {
+      margin: 0;
+      font-size: .96rem;
+    }
+
+    .quick-links-head p {
+      margin: 2px 0 0;
+      color: var(--muted);
+      font-size: .82rem;
+    }
+
+    .quick-links-list {
+      display: grid;
+      gap: 8px;
+    }
+
+    .quick-link-item {
+      display: grid;
+      gap: 8px;
+      grid-template-columns: 1fr auto;
+      align-items: center;
+      border: 1px solid rgba(142, 194, 255, 0.12);
+      border-radius: 12px;
+      padding: 10px 12px;
+      background: rgba(255, 255, 255, 0.03);
+    }
+
+    .quick-link-name {
+      font-weight: 600;
+      font-size: .92rem;
+      line-height: 1.35;
+    }
+
+    .quick-link-btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 40px;
+      padding: 0 14px;
+      border-radius: 10px;
+      background: linear-gradient(135deg, #7ee7ff 0%, #4caeff 45%, #1f7cdb 100%);
+      color: #03121f;
+      font-weight: 800;
+      text-decoration: none;
+      white-space: nowrap;
+    }
+
     .hidden {
       display: none !important;
     }
@@ -633,7 +696,9 @@
         <div class="filters">
           <div class="field">
             <label for="cariNama">Carian Nama Murid</label>
-            <input id="cariNama" class="input" type="text" placeholder="Contoh: Aisyah">
+            <select id="cariNama" class="select">
+              <option value="">Semua murid</option>
+            </select>
           </div>
           <div class="field">
             <label for="filterTarikh">Tarikh</label>
@@ -661,16 +726,8 @@
 
     <section id="manualSection" class="surface manual-wrap hidden" aria-label="Input manual kehadiran">
       <h3 class="manual-head">Input Kehadiran Manual (Guru)</h3>
-      <form id="manualForm" class="manual-form">
+      <div class="manual-form">
         <div class="manual-grid">
-          <div class="field">
-            <label for="manualPassword">Kata Laluan Guru</label>
-            <input id="manualPassword" class="input" type="password" placeholder="Masukkan kata laluan">
-          </div>
-          <div class="field">
-            <label for="manualTarikh">Tarikh</label>
-            <input id="manualTarikh" class="input" type="date">
-          </div>
           <div class="field">
             <label for="manualNama">Nama Murid</label>
             <select id="manualNama" class="select" required>
@@ -683,20 +740,20 @@
               <option value="">Pilih kelas</option>
             </select>
           </div>
-          <div class="field">
-            <label for="manualStatus">Status</label>
-            <select id="manualStatus" class="select">
-              <option value="Hadir">Hadir</option>
-              <option value="Tidak Hadir">Tidak Hadir</option>
-            </select>
-          </div>
         </div>
-        <p class="manual-note">Gunakan fungsi ini hanya untuk murid yang terlupa bawa kad.</p>
         <div class="manual-actions">
-          <button id="btnSubmitManual" class="btn" type="submit">Simpan Kehadiran Manual</button>
           <button id="btnCancelManual" class="btn-ghost" type="button">Tutup</button>
         </div>
-      </form>
+      </div>
+      <div id="manualQuickLinks" class="quick-links hidden" aria-live="polite">
+        <div class="quick-links-head">
+          <div>
+            <h4>Pautan Rekod Pantas</h4>
+            <p>Pilih kelas dan nama murid, kemudian tekan butang untuk buka URL kehadiran.</p>
+          </div>
+        </div>
+        <div id="manualQuickLinksList" class="quick-links-list"></div>
+      </div>
     </section>
 
     <section class="chart-scroll" aria-label="Statistik Kehadiran">
@@ -744,108 +801,288 @@
     const GURU_PASSWORD = 'myHadir1234';
     const CACHE_KEY = 'myhadir_cache_v2';
     const MASTER_MURID_KEY = 'myhadir_master_murid_v1';
-    const KELAS_MANUAL_TETAP = ['5 H', '5 I', '5 J'];
-    const SENARAI_MURID_TETAP = {
-      '5 H': [
-        'ADIB QAYYUM BIN ALIAS',
-        'AHMAD HARITH BIN AZMI',
-        'AHMAD RIDZWAN SHAH BIN AHMAD RAFNAN',
-        'ASNIDA BINTI ABDUL HALIM',
-        'HARRIZ AFIQ BIN ZAMRI ARIFIN',
-        'HAZIM BIN MOHAMED HASAN',
-        'JAZFARREL IQRAM BIN JAZZMAN FAIZZAL',
-        'MASTER MUHAMMADFIRDAUS SOHATEH',
-        'MOHAMMAD AQIL HAQIMI BIN MOHD FAIZAL',
-        'MUHAMAD AFIQ RAHIMI BIN ABDULLAH',
-        'MUHAMMAD ABDUL HAFIDZ BIN ABDUL RAHMAN',
-        'MUHAMMAD ABDUL RAZAK BIN NORHISHAM',
-        'MUHAMMAD AMIR ASYRAAF BIN ABDUL HAFIZ HAKAM',
-        'MUHAMMAD AQIL DANIAL BIN MOHD FARHAM',
-        'MUHAMMAD AWAL RAMADHAN BIN MAZUARI',
-        'MUHAMMAD DANIAL ZAKWAN BIN MOHD ZAKI',
-        'MUHAMMAD FAISAL HIQBAL BIN MOHD ASRI',
-        'MUHAMMAD HAFIZ SHAZWAN BIN HEROL NORHIZAM',
-        'MUHAMMAD HARRAZ ZULHAKIM BIN ANDRYOS',
-        'MUHAMMAD HAYKAL BIN MUSAHIMI',
-        'MUHAMMAD HAZIM BIN SUWARI',
-        'MUHAMMAD IQBAL BIN MOHD AZHAR',
-        'MUHAMMAD IQRAM DANISH BIN JAMALUDIN',
-        "MUHAMMAD KASYFI MU'IZ BIN MOHAMAD KHAIRUL AZUAN",
-        'MUHAMMAD NUR RIDHWAN HAFIZ BIN SAZALI',
-        'MUHAMMAD SYAFIQ BIN FARIZAL',
-        'MUHAMMAD UMMAR DANISH BIN MOHD IZZUDIN',
-        'MUHAMMAD ZAFYR BIN MOHD ZAMZURI',
-        'NORKHAIRUNNISA BINTI AZIZUL ANUAR',
-        'NUR ALEESYA BINTI HISHAMUDIN',
-        'NUR FARAH ALESYA BINTI MUHAMAD BADRORIZAL',
-        'NUR FATIN MARDHIAH BINTIMOHD.SABRI',
-        'NUR HAFRIZUL SHAH BIN ABDULLAH',
-        'NUR HUSNINA IRDINA BINTI MUHAMAD FAIZAL',
-        'NUR SYAKILA IZZATY BINTI SUHAIMI',
-        'NURUL SHUHADA BINTI MD AZHAR',
-        'PUTRA HARRIS DANISH BIN ZAINUL AKMAL',
-        'PUTRI ALYA ADRIANA BINTI MUHAMMAD FAIZAL'
-      ],
-      '5 I': [
-        'AISYA HUMAIRA BINTI SHAHRUL NORKAMAL AZWA',
-        'AMIN QHUSAIRY BIN IBRAHIM',
-        'ASMAANISA BINTI MOHD BASIRUDDIN',
-        'MITHANA KUMAR A/L RATHNA KUMAR',
-        'MOHD ARIEF HAIKAL BIN MOHD NADZRI',
-        'MONALISA ROSANA BINTI ABDULLAH',
-        'MUHAMMAD ADAM HAZIQ BIN MOHD EZAINI',
-        'MUHAMMAD AIDIL BIN ABDUL HAMID',
-        'MUHAMMAD AKIF IZWAN BIN MOHAMMAD AZAHAR',
-        'MUHAMMAD DANIEL HAIKAL BIN MOHD JOHARI',
-        'MUHAMMAD DZULFAQAR DZAKWAN BIN MOHAMAD SHAHRIL',
-        'MUHAMMAD HAZIQ IRFAN BIN MOHD BUKHARI',
-        'MUHAMMAD ISMA DANIAL BIN ISMANIZAM LUBIS',
-        'MUHAMMAD NUR HAIQAL BIN SUHAIRIN',
-        'MUHAMMAD RAIMI SYAZWAN BIN ABDUL MAJID',
-        'NADIATUL HUSNA BINTI ZULL',
-        'NOR AIN FARISYA BINTI MOHD.FAIZAL',
-        'NUR ALIYA BINTI MUSTAFA',
-        'NUR BATRISYIA BINTI MUAHMAD HIRDIR',
-        'NUR DINI DALILI BINTI NASRI',
-        'NUR ELIYANA ANISA BINTI SAFLI RIZUAN',
-        'NUR HAFRIZAL BIN ABDULLAH',
-        'NUR HUMAIRA DANIA BINTI SHUHAIRI',
-        'PUTERI NABILA LIYANA BINTI MOHAMED KARIT',
-        'RAJA KHAIRULNAIM BIN RAJA KAMALRULAZMAN',
-        'ZETY SAIDATUL ASMIDA BINTI ROZALI'
+    const PAUTAN_REKOD_PANTAS = {
+      '5 PVMA': [
+        { nama: 'AINUL MARDHIAH BINTI MOHD SULAIMAN', url: 'https://VJT5ys.short.gy/O74bHu' },
+        { nama: 'MUHAMMAD ADAM BIN JENISWAR AGUS', url: 'https://VJT5ys.short.gy/YOMMwr' },
+        { nama: 'MUHAMMAD NAJMI BIN AHMAD HAZIZUL HAKIM', url: 'https://VJT5ys.short.gy/aknOKt' },
+        { nama: 'NUR AINA NADHIRAH BINTI AZHAR', url: 'https://VJT5ys.short.gy/x3S2wd' },
+        { nama: 'NUR AMIERA MAISARAH BINTI MOHD HAFSYAM AMIR', url: 'https://VJT5ys.short.gy/oa3R9H' },
+        { nama: 'NUR AQILAH BINTI MOHD NOR KHAIRUL', url: 'https://VJT5ys.short.gy/y3Hi2B' },
+        { nama: 'NUR BATRISYIA AFIQAH BINTI ROSWADINATA', url: 'https://VJT5ys.short.gy/PkEGHh' },
+        { nama: 'NUR FARAH ALIAH BINTI MOHD ASWAD', url: 'https://VJT5ys.short.gy/PqHujK' },
+        { nama: 'NUR FATIN NABILAH BINTI HESHAM', url: 'https://VJT5ys.short.gy/qNGnJD' },
+        { nama: 'SAFWANA BINTI MUSTAPA KAMA SHAH', url: 'https://VJT5ys.short.gy/NqC2Te' },
+        { nama: 'SITI HUMAIRA SAFIYA BINTI AMRAN', url: 'https://VJT5ys.short.gy/Vlk3hC' }
       ],
       '5 J': [
-        'AMRISH DANISH BIN ROHAIZAD',
-        'AQIL QAYYUM BIN MOHD YAZID',
-        'BHARHTH RAJ A/L ARUMUGAM',
-        'DANISH HAIKAL BIN MUHAMMAD RIDZWAN',
-        'KHARIL AZIZI A/L ASKARALI',
-        'MOHAMAD NABIL BIN MOHD ASRI',
-        'MUHAMMAD ADAM RIZKIN BIN ABDUL MUQADDIM',
-        'MUHAMMAD ADIEB THAQIEFF BIN ABDUL MALIK',
-        'MUHAMMAD AFIQ HAKIMI BIN MOHD AZRAIKA BASTHOMI',
-        'MUHAMMAD ALIEF SHAH BIN ZULKIFLI',
-        'MUHAMMAD ALIF AIMAN BIN RAHSIDI',
-        'MUHAMMAD AQIL BIN ABDUL GHANI',
-        'MUHAMMAD AZIM BIN ABDULLAH',
-        'MUHAMMAD HAIKAL BIN HAFIZAL AZMI',
-        'MUHAMMAD HAIKAL NAJMI BIN MD ISA',
-        'MUHAMMAD NAJMI DANIAL BIN MOHAMAD NASIR',
-        'MUHAMMAD NUH AQIL BIN SHAIFUL ADNAN',
-        'MUHAMMAD SHAH HAIKAL BIN MOHD FAUZI',
-        'MUHAMMAD ZARILSHAWARUL FITRI BIN KAMARUZAMAN',
-        'NAUFAL FAJAR MAULANA BIN ABDULLAH',
-        'NIL WAFIY DARWISY BIN MOHD SHARIZAL',
-        'NUR ALISYA BINTI HARIZAN',
-        'NUR BHAITIE ALEESYA BINTI KHAIRUDI',
-        'NUR EZANI NAJWA BINTI ABDULLAH',
-        'NUR IMAN AZ-ZAHRA BINTI ABDULLAH',
-        'NUR SHAZLIYANA BATRISYIA BINTI ABDULLAH',
-        'NURUL FARZANAH BINTI ZULKAFLI',
-        'NURUL QISTINA MYSARA BINTI KU MOHD ZULIZY',
-        'NURUL SHAHIRAH BINTI MOHD MAZLAN',
-        'PUNITHA A/P LETCHUMANAN',
-        'SAMITHRA A/P RAJANDERAN'
+        { nama: 'AMRISH DANISH BIN ROHAIZAD', url: 'https://VJT5ys.short.gy/fHP1SN' },
+        { nama: 'AQIL QAYYUM BIN MOHD YAZID', url: 'https://VJT5ys.short.gy/ZmAlYe' },
+        { nama: 'BHARHTH RAJ A/L ARUMUGAM', url: 'https://VJT5ys.short.gy/yzeKXF' },
+        { nama: 'DANISH HAIKAL BIN MUHAMMAD RIDZWAN', url: 'https://VJT5ys.short.gy/Vry8Np' },
+        { nama: 'KHARIL AZIZI A/L ASKARALI', url: 'https://VJT5ys.short.gy/jkWgtY' },
+        { nama: 'MOHAMAD NABIL BIN MOHD ASRI', url: 'https://VJT5ys.short.gy/VrNuYC' },
+        { nama: 'MUHAMMAD ADAM RIZKIN BIN ABDUL MUQADDIM', url: 'https://VJT5ys.short.gy/KgIhns' },
+        { nama: 'MUHAMMAD ADIEB THAQIEFF BIN ABDUL MALIK', url: 'https://VJT5ys.short.gy/iJQIVx' },
+        { nama: 'MUHAMMAD AFIQ HAKIMI BIN MOHD AZRAIKA BASTHOMI', url: 'https://VJT5ys.short.gy/DJMN13' },
+        { nama: 'MUHAMMAD ALIEF SHAH BIN ZULKIFLI', url: 'https://VJT5ys.short.gy/IrquRj' },
+        { nama: 'MUHAMMAD ALIF AIMAN BIN RAHSIDI', url: 'https://VJT5ys.short.gy/TPAqrX' },
+        { nama: 'MUHAMMAD AQIL BIN ABDUL GHANI', url: 'https://VJT5ys.short.gy/6LRmDe' },
+        { nama: 'MUHAMMAD AZIM BIN ABDULLAH', url: 'https://VJT5ys.short.gy/OoNmdl' },
+        { nama: 'MUHAMMAD HAIKAL BIN HAFIZAL AZMI', url: 'https://VJT5ys.short.gy/63ylUl' },
+        { nama: 'MUHAMMAD HAIKAL NAJMI BIN MD ISA', url: 'https://VJT5ys.short.gy/dc72gg' },
+        { nama: 'MUHAMMAD NAJMI DANIAL BIN MOHAMAD NASIR', url: 'https://VJT5ys.short.gy/KHdf0u' },
+        { nama: 'MUHAMMAD NUH AQIL BIN SHAIFUL ADNAN', url: 'https://VJT5ys.short.gy/bLemtF' },
+        { nama: 'MUHAMMAD SHAH HAIKAL BIN MOHD FAUZI', url: 'https://VJT5ys.short.gy/SSxTQ6' },
+        { nama: 'MUHAMMAD ZARILSHAWARUL FITRI BIN KAMARUZAMAN', url: 'https://VJT5ys.short.gy/qoaPoU' },
+        { nama: 'NAUFAL FAJAR MAULANA BIN ABDULLAH', url: 'https://VJT5ys.short.gy/weetqL' },
+        { nama: 'NIL WAFIY DARWISY BIN MOHD SHARIZAL', url: 'https://VJT5ys.short.gy/2QH50P' },
+        { nama: 'NUR ALISYA BINTI HARIZAN', url: 'https://VJT5ys.short.gy/MB8fyP' },
+        { nama: 'NUR BHAITIE ALEESYA BINTI KHAIRUDI', url: 'https://VJT5ys.short.gy/UGwxwn' },
+        { nama: 'NUR EZANI NAJWA BINTI ABDULLAH', url: 'https://VJT5ys.short.gy/65ViAn' },
+        { nama: 'NUR IMAN AZ-ZAHRA BINTI ABDULLAH', url: 'https://VJT5ys.short.gy/jseAG2' },
+        { nama: 'NUR SHAZLIYANA BATRISYIA BINTI ABDULLAH', url: 'https://VJT5ys.short.gy/a2OOZw' },
+        { nama: 'NURUL FARZANAH BINTI ZULKAFLI', url: 'https://VJT5ys.short.gy/YsXhdE' },
+        { nama: 'NURUL QISTINA MYSARA BINTI KU MOHD ZULIZY', url: 'https://VJT5ys.short.gy/9p0eVP' },
+        { nama: 'NURUL SHAHIRAH BINTI MOHD MAZLAN', url: 'https://VJT5ys.short.gy/dMags0' },
+        { nama: 'PUNITHA A/P LETCHUMANAN', url: 'https://VJT5ys.short.gy/5A3QzK' },
+        { nama: 'SAMITHRA A/P RAJANDERAN', url: 'https://VJT5ys.short.gy/k67GAO' }
+      ],
+      '5 I': [
+        { nama: 'AISYA HUMAIRA BINTI SHAHRUL NORKAMAL AZWA', url: 'https://VJT5ys.short.gy/wehpe4' },
+        { nama: 'AMIN QHUSAIRY BIN IBRAHIM', url: 'https://VJT5ys.short.gy/GxzWDX' },
+        { nama: 'ASMAANISA BINTI MOHD BASIRUDDIN', url: 'https://VJT5ys.short.gy/z5a6JJ' },
+        { nama: 'MITHANA KUMAR A/L RATHNA KUMAR', url: 'https://VJT5ys.short.gy/2eR00q' },
+        { nama: 'MOHD ARIEF HAIKAL BIN MOHD NADZRI', url: 'https://VJT5ys.short.gy/stJ9fV' },
+        { nama: 'MONALISA ROSANA BINTI ABDULLAH', url: 'https://VJT5ys.short.gy/Q4fziM' },
+        { nama: 'MUHAMMAD ADAM HAZIQ BIN MOHD EZAINI', url: 'https://VJT5ys.short.gy/jWHzEX' },
+        { nama: 'MUHAMMAD AIDIL BIN ABDUL HAMID', url: 'https://VJT5ys.short.gy/yhBlwf' },
+        { nama: 'MUHAMMAD AKIF IZWAN BIN MOHAMMAD AZAHAR', url: 'https://VJT5ys.short.gy/0yr8OR' },
+        { nama: 'MUHAMMAD DANIEL HAIKAL BIN MOHD JOHARI', url: 'https://VJT5ys.short.gy/IymLku' },
+        { nama: 'MUHAMMAD DZULFAQAR DZAKWAN BIN MOHAMAD SHAHRIL', url: 'https://VJT5ys.short.gy/a3bz1m' },
+        { nama: 'MUHAMMAD HAZIQ IRFAN BIN MOHD BUKHARI', url: 'https://VJT5ys.short.gy/JVvgBM' },
+        { nama: 'MUHAMMAD ISMA DANIAL BIN ISMANIZAM LUBIS', url: 'https://VJT5ys.short.gy/9dO3Vx' },
+        { nama: 'MUHAMMAD NUR HAIQAL BIN SUHAIRIN', url: 'https://VJT5ys.short.gy/P8NerB' },
+        { nama: 'MUHAMMAD RAIMI SYAZWAN BIN ABDUL MAJID', url: 'https://VJT5ys.short.gy/aFrgjJ' },
+        { nama: 'NADIATUL HUSNA BINTI ZULL', url: 'https://VJT5ys.short.gy/7YwXPl' },
+        { nama: 'NOR AIN FARISYA BINTI MOHD.FAIZAL', url: 'https://VJT5ys.short.gy/6dZdtB' },
+        { nama: 'NUR ALIYA BINTI MUSTAFA', url: 'https://VJT5ys.short.gy/IUOOq5' },
+        { nama: 'NUR BATRISYIA BINTI MUAHMAD HIRDIR', url: 'https://VJT5ys.short.gy/E5ZzgM' },
+        { nama: 'NUR DINI DALILI BINTI NASRI', url: 'https://VJT5ys.short.gy/uhavar' },
+        { nama: 'NUR ELIYANA ANISA BINTI SAFLI RIZUAN', url: 'https://VJT5ys.short.gy/9Ylt2Y' },
+        { nama: 'NUR HAFRIZAL BIN ABDULLAH', url: 'https://VJT5ys.short.gy/EE3GFw' },
+        { nama: 'NUR HUMAIRA DANIA BINTI SHUHAIRI', url: 'https://VJT5ys.short.gy/0CMKbn' },
+        { nama: 'PUTERI NABILA LIYANA BINTI MOHAMED KARIT', url: 'https://VJT5ys.short.gy/8f4Izp' },
+        { nama: 'RAJA KHAIRULNAIM BIN RAJA KAMALRULAZMAN', url: 'https://VJT5ys.short.gy/bB97lW' },
+        { nama: 'ZETY SAIDATUL ASMIDA BINTI ROZALI', url: 'https://VJT5ys.short.gy/4Ya0cX' }
+      ],
+      '5 H': [
+        { nama: 'ADIB QAYYUM BIN ALIAS', url: 'https://VJT5ys.short.gy/eBcxef' },
+        { nama: 'AHMAD HARITH BIN AZMI', url: 'https://VJT5ys.short.gy/1Tel1y' },
+        { nama: 'AHMAD RIDZWAN SHAH BIN AHMAD RAFNAN', url: 'https://VJT5ys.short.gy/Yk6czg' },
+        { nama: 'ASNIDA BINTI ABDUL HALIM', url: 'https://VJT5ys.short.gy/K5iVl9' },
+        { nama: 'HARRIZ AFIQ BIN ZAMRI ARIFIN', url: 'https://VJT5ys.short.gy/0wDaab' },
+        { nama: 'HAZIM BIN MOHAMED HASAN', url: 'https://VJT5ys.short.gy/VS9GMr' },
+        { nama: 'JAZFARREL IQRAM BIN JAZZMAN FAIZZAL', url: 'https://VJT5ys.short.gy/XBwf6W' },
+        { nama: 'MASTER MUHAMMADFIRDAUS SOHATEH', url: 'https://VJT5ys.short.gy/nh2hHx' },
+        { nama: 'MOHAMMAD AQIL HAQIMI BIN MOHD FAIZAL', url: 'https://VJT5ys.short.gy/xs14iQ' },
+        { nama: 'MUHAMAD AFIQ RAHIMI BIN ABDULLAH', url: 'https://VJT5ys.short.gy/wR5lxU' },
+        { nama: 'MUHAMMAD ABDUL HAFIDZ BIN ABDUL RAHMAN', url: 'https://VJT5ys.short.gy/cZcvl3' },
+        { nama: 'MUHAMMAD ABDUL RAZAK BIN NORHISHAM', url: 'https://VJT5ys.short.gy/nmJTsI' },
+        { nama: 'MUHAMMAD AMIR ASYRAAF BIN ABDUL HAFIZ HAKAM', url: 'https://VJT5ys.short.gy/NesdiY' },
+        { nama: 'MUHAMMAD AQIL DANIAL BIN MOHD FARHAM', url: 'https://VJT5ys.short.gy/lVm7ME' },
+        { nama: 'MUHAMMAD AWAL RAMADHAN BIN MAZUARI', url: 'https://VJT5ys.short.gy/4NlZRA' },
+        { nama: 'MUHAMMAD DANIAL ZAKWAN BIN MOHD ZAKI', url: 'https://VJT5ys.short.gy/I86JyT' },
+        { nama: 'MUHAMMAD FAISAL HIQBAL BIN MOHD ASRI', url: 'https://VJT5ys.short.gy/qduu3X' },
+        { nama: 'MUHAMMAD HAFIZ SHAZWAN BIN HEROL NORHIZAM', url: 'https://VJT5ys.short.gy/WMt2yl' },
+        { nama: 'MUHAMMAD HARRAZ ZULHAKIM BIN ANDRYOS', url: 'https://VJT5ys.short.gy/vUPUjO' },
+        { nama: 'MUHAMMAD HAYKAL BIN MUSAHIMI', url: 'https://VJT5ys.short.gy/Rp6JzY' },
+        { nama: 'MUHAMMAD HAZIM BIN SUWARI', url: 'https://VJT5ys.short.gy/HvoAPJ' },
+        { nama: 'MUHAMMAD IQBAL BIN MOHD AZHAR', url: 'https://VJT5ys.short.gy/ujSA59' },
+        { nama: 'MUHAMMAD IQRAM DANISH BIN JAMALUDIN', url: 'https://VJT5ys.short.gy/Tzb7tj' },
+        { nama: "MUHAMMAD KASYFI MU'IZ BIN MOHAMAD KHAIRUL AZUAN", url: 'https://VJT5ys.short.gy/oq9TjN' },
+        { nama: 'MUHAMMAD NUR RIDHWAN HAFIZ BIN SAZALI', url: 'https://VJT5ys.short.gy/y6IUbN' },
+        { nama: 'MUHAMMAD SYAFIQ BIN FARIZAL', url: 'https://VJT5ys.short.gy/0id8FE' },
+        { nama: 'MUHAMMAD UMMAR DANISH BIN MOHD IZZUDIN', url: 'https://VJT5ys.short.gy/W5jfNv' },
+        { nama: 'MUHAMMAD ZAFYR BIN MOHD ZAMZURI', url: 'https://VJT5ys.short.gy/wD8ZXa' },
+        { nama: 'NORKHAIRUNNISA BINTI AZIZUL ANUAR', url: 'https://VJT5ys.short.gy/bBntmh' },
+        { nama: 'NUR ALEESYA BINTI HISHAMUDIN', url: 'https://VJT5ys.short.gy/HIQrGV' },
+        { nama: 'NUR FARAH ALESYA BINTI MUHAMAD BADRORIZAL', url: 'https://VJT5ys.short.gy/wAEL22' },
+        { nama: 'NUR FATIN MARDHIAH BINTIMOHD.SABRI', url: 'https://VJT5ys.short.gy/JkbSvS' },
+        { nama: 'NUR HAFRIZUL SHAH BIN ABDULLAH', url: 'https://VJT5ys.short.gy/m9Mmce' },
+        { nama: 'NUR HUSNINA IRDINA BINTI MUHAMAD FAIZAL', url: 'https://VJT5ys.short.gy/d1qIq9' },
+        { nama: 'NUR SYAKILA IZZATY BINTI SUHAIMI', url: 'https://VJT5ys.short.gy/2dM03x' },
+        { nama: 'NURUL SHUHADA BINTI MD AZHAR', url: 'https://VJT5ys.short.gy/Bo4a4k' },
+        { nama: 'PUTRA HARRIS DANISH BIN ZAINUL AKMAL', url: 'https://VJT5ys.short.gy/vSCcW6' },
+        { nama: 'PUTRI ALYA ADRIANA BINTI MUHAMMAD FAIZAL', url: 'https://VJT5ys.short.gy/sq0tVL' }
+      ],
+      '5 G': [
+        { nama: 'AKIF MUKHRIZ BIN KHAIRI', url: 'https://VJT5ys.short.gy/eyVgPs' },
+        { nama: 'ALEESYA HUMAIRA BINTI MUHAMMAD SYAWAL', url: 'https://VJT5ys.short.gy/ISeWdH' },
+        { nama: 'ALIF QUSYAIRI BIN MOHD ASRI', url: 'https://VJT5ys.short.gy/9wRaei' },
+        { nama: 'AMMAR RIZQI BIN SUHAIDI', url: 'https://VJT5ys.short.gy/nqbrHB' },
+        { nama: 'ARISSA MAISARAH BINTI HAZMAN', url: 'https://VJT5ys.short.gy/dwP3pA' },
+        { nama: 'HAMIZAH MAISARAH BINTI HAIRI', url: 'https://VJT5ys.short.gy/jsXUZR' },
+        { nama: "I'QAL AQIMI BIN IZAHAM", url: 'https://VJT5ys.short.gy/aLrBNn' },
+        { nama: 'ISKANDAR ZULKARNAIN BIN BUDY DHARMAWAN', url: 'https://VJT5ys.short.gy/p2K6oD' },
+        { nama: 'LUQMAN NUR HAQIM BIN HAZLAN', url: 'https://VJT5ys.short.gy/vozpbe' },
+        { nama: 'MAS ADIE ZAFUAN BIN MAS SAZMY', url: 'https://VJT5ys.short.gy/XX3F99' },
+        { nama: 'MOHAMAD ZULKIFLI BIN IBRAHIM', url: 'https://VJT5ys.short.gy/0TtxFq' },
+        { nama: 'MUHAMAD ARIFFIN BIN RAHIMI', url: 'https://VJT5ys.short.gy/f2fKph' },
+        { nama: 'MUHAMAD HAFIZUDDIN BIN RAMLY', url: 'https://VJT5ys.short.gy/NLmsNT' },
+        { nama: 'MUHAMMAD ADAM ALIF BIN ABDULLAH', url: 'https://VJT5ys.short.gy/Nd9w0h' },
+        { nama: 'MUHAMMAD ALIF HAKIMI BIN AZIZI', url: 'https://VJT5ys.short.gy/OoNP3I' },
+        { nama: 'MUHAMMAD ASYRAAF BIN ROSLI', url: 'https://VJT5ys.short.gy/kPBVQ8' },
+        { nama: 'MUHAMMAD FARIS BIN ROSLEY', url: 'https://VJT5ys.short.gy/T1Z3ra' },
+        { nama: 'MUHAMMAD FITRI MUHSININ BIN AZIZAN', url: 'https://VJT5ys.short.gy/mt6oYD' },
+        { nama: 'MUHAMMAD HAQIMI BIN RAZIS', url: 'https://VJT5ys.short.gy/u6O9xw' },
+        { nama: 'MUHAMMAD HAZIQ BIN RAZALI', url: 'https://VJT5ys.short.gy/4vkFEc' },
+        { nama: 'MUHAMMAD IQBAL HAKIMI BIN HISYAM', url: 'https://VJT5ys.short.gy/Qkkb8C' },
+        { nama: 'MUHAMMAD IRFAAN BIN ASOOR', url: 'https://VJT5ys.short.gy/K0Xa76' },
+        { nama: 'MUHAMMAD QAYYUM RAYYAN BIN IDRIS', url: 'https://VJT5ys.short.gy/sMI3tJ' },
+        { nama: 'MUHAMMAD RAYYAN DANIES BIN ROZMAN', url: 'https://VJT5ys.short.gy/hfMMVg' },
+        { nama: 'MUHAMMAD SYAWAL HAIKAL BIN MOHD ADNAN', url: 'https://VJT5ys.short.gy/JqJHJo' },
+        { nama: 'MUHAMMAD ZAHIRUL ZAFRAN BIN ABDUL RAHIM', url: 'https://VJT5ys.short.gy/8jpspo' },
+        { nama: 'NUL DANNY NATASHA BINTI IZHAR', url: 'https://VJT5ys.short.gy/FX2Sva' },
+        { nama: 'NUR FAIZATUL HUSNA BINTI ABDUL RAHMAN', url: 'https://VJT5ys.short.gy/qF5qM2' },
+        { nama: 'NUR FASZRINATASYA BINTI JUHARMAN', url: 'https://VJT5ys.short.gy/LQaMRf' },
+        { nama: 'NUR HASYA DALILA BINTI ROSLAN', url: 'https://VJT5ys.short.gy/txAsiN' },
+        { nama: 'NURUL EMAN ALEYA BINTI ABDUL KUDUS', url: 'https://VJT5ys.short.gy/C9Ny8Q' },
+        { nama: 'NURAINA NAJWA BINTI ABDULLAH', url: 'https://VJT5ys.short.gy/980dmN' },
+        { nama: "PUTRI NUR'BALQIS BINTI ZAINAL", url: 'https://VJT5ys.short.gy/VDrk9S' },
+        { nama: 'RAFIQ BIN RAZIF', url: 'https://VJT5ys.short.gy/06usbS' },
+        { nama: 'WAN ADAM HARIS BIN WAN MOHD FADZLI', url: 'https://VJT5ys.short.gy/VcK2EP' },
+        { nama: 'WAN NUR QISTINA MUSFIRAH BINTI WAN MOHD MUZRI', url: 'https://VJT5ys.short.gy/2jfMIx' }
+      ],
+      '5 D': [
+        { nama: 'DANIA DANISSHA BINTI MOHD MAZLAN', url: 'https://VJT5ys.short.gy/xdSkkE' },
+        { nama: 'FATEMA DAMIA BINTI MOHAMAD HASNOR', url: 'https://VJT5ys.short.gy/MOku2T' },
+        { nama: 'HIDAYAH QISTINA BINTI ABDUL MANAF', url: 'https://VJT5ys.short.gy/SVOxNz' },
+        { nama: 'ISABELLA MELISSA BINTI ZAMSARI', url: 'https://VJT5ys.short.gy/hU2Jzu' },
+        { nama: 'LISA SURIHANI BINTI MOHD NAZROL HISHAM', url: 'https://VJT5ys.short.gy/YSYuWB' },
+        { nama: 'NOR BALQIS HAYANI BINTI RAMLE', url: 'https://VJT5ys.short.gy/7e5zPp' },
+        { nama: 'NUR ADRIANA MAISARAH BINTI KAMARUL AZMAN', url: 'https://VJT5ys.short.gy/4DTWJh' },
+        { nama: 'NUR ALEESYA ARIANA BINTI MOHD SHAHRUL NAZRIN', url: 'https://VJT5ys.short.gy/NJoVDW' },
+        { nama: 'NUR ALIA FARIZA BINTI ADUL KARIYA', url: 'https://VJT5ys.short.gy/rOafoE' },
+        { nama: 'NUR DARWISYAH BATRISYIA BINTI MD AL FIZAN', url: 'https://VJT5ys.short.gy/aFauKC' },
+        { nama: 'NUR DELIMA QALESYA BINTI JEFRY SUARDI', url: 'https://VJT5ys.short.gy/5zX6HG' },
+        { nama: 'NUR FAIZATUL HUMAIRA BINTI ABDUL RAHMAN', url: 'https://VJT5ys.short.gy/bV6epm' },
+        { nama: 'NUR HUMAYRAA DAMIA BINTI HISHAM', url: 'https://VJT5ys.short.gy/vUXvUr' },
+        { nama: 'NUR QASEH BINTI ZULBAKHRIM', url: 'https://VJT5ys.short.gy/W1dYs7' },
+        { nama: 'NUR SALIKIN MAISARAH BINTI RANO KARNO', url: 'https://VJT5ys.short.gy/sJaZPo' },
+        { nama: 'NUR SYUHADA SOFEA BINTI MAHAMAD REZAL', url: 'https://VJT5ys.short.gy/FYbMT9' },
+        { nama: 'NURSYAZA HUSNA BINTI MUHAMMAD RIZAL', url: 'https://VJT5ys.short.gy/XDa6Vm' },
+        { nama: 'NURUL AIDA BINTI SUHAILI', url: 'https://VJT5ys.short.gy/oBPGck' },
+        { nama: 'NURUL AMYLIA NAJWA BINTI MOHD ROSLAN', url: 'https://VJT5ys.short.gy/fQSUwP' },
+        { nama: 'NURUL ATHIQAH BINTI AHMAD', url: 'https://VJT5ys.short.gy/4HqCvZ' },
+        { nama: 'NURUL ATHIRAH BINTI SAMSOL HISAM', url: 'https://VJT5ys.short.gy/T9PQxp' },
+        { nama: 'NURUL IMAN ALLESYA BINTI MOHD AZMI', url: 'https://VJT5ys.short.gy/SHQxkF' },
+        { nama: 'PUTRI ELYSHA AIREEN BINTI SHAHRYMAN SHAHRIL', url: 'https://VJT5ys.short.gy/gPh9fy' },
+        { nama: 'SITI NURDINI ZULAIKHA BINTI MOHD AZMEE', url: 'https://VJT5ys.short.gy/jEmeBP' }
+      ],
+      '5 C': [
+        { nama: 'ADEEB SYAMIL BIN ANIZAM', url: 'https://VJT5ys.short.gy/JkSkYS' },
+        { nama: 'AHMAD NAJMI IRFAN BIN AHMAD FAIZ', url: 'https://VJT5ys.short.gy/oFYlx9' },
+        { nama: 'AMIR DANISH BIN AHMAD SAFAR', url: 'https://VJT5ys.short.gy/smj6l4' },
+        { nama: 'ARIF BIN MOHD EZZAR', url: 'https://VJT5ys.short.gy/nSTyM5' },
+        { nama: 'FARIS AZWAR BIN ANUAR', url: 'https://VJT5ys.short.gy/FewLuN' },
+        { nama: 'HAIKAL BIN ARSYAD', url: 'https://VJT5ys.short.gy/QsinS9' },
+        { nama: 'MAS PUTRA ZAQUAN BIN MAS SAZMY', url: 'https://VJT5ys.short.gy/kNd8yM' },
+        { nama: 'MAS SYAZWINA BINTI MAS SAZNY', url: 'https://VJT5ys.short.gy/OcYIrB' },
+        { nama: 'MOHAMAD THAQIF ADHA BIN FARIZUL HAIZAM', url: 'https://VJT5ys.short.gy/MixbRc' },
+        { nama: 'MUHAMAD AQIEL MUHAZIQ BIN MUHAMAD', url: 'https://VJT5ys.short.gy/gnTeSi' },
+        { nama: 'MUHAMAD FAQROL HAZEEQ BIN MOHD FAUZIE', url: 'https://VJT5ys.short.gy/Gmu1dG' },
+        { nama: 'MUHAMAD SAFRIL HAZIM BIN KAMARUDDIN', url: 'https://VJT5ys.short.gy/k9buvh' },
+        { nama: 'MUHAMMAD ADAM FADHULLAH BIN KHAIRUN', url: 'https://VJT5ys.short.gy/6z1kI4' },
+        { nama: 'MUHAMMAD ADAM HAREIZ BIN MOHD YUSOF', url: 'https://VJT5ys.short.gy/s3e1n7' },
+        { nama: 'MUHAMMAD ALIFF DANIAL BIN MUSMULIAYDI', url: 'https://VJT5ys.short.gy/GNAnqF' },
+        { nama: 'MUHAMMAD HAIKAL BIN ABDUL LATIF', url: 'https://VJT5ys.short.gy/3UT3Nm' },
+        { nama: 'MUHAMMAD IZZAT BIN ZAMSARI', url: 'https://VJT5ys.short.gy/Ug1Iu1' },
+        { nama: 'MUHAMMAD KHALIF DARWISY BIN MOHD SHAZLY', url: 'https://VJT5ys.short.gy/zhqE51' },
+        { nama: 'MUHAMMAD RAFI BIN RAZALI', url: 'https://VJT5ys.short.gy/TShH8Q' },
+        { nama: 'MUHAMMAD WAFIY MUHAIMIN BIN ZAKARIA', url: 'https://VJT5ys.short.gy/zngvWs' },
+        { nama: 'NAMI IMANI BINTI AHMAD ZAINI', url: 'https://VJT5ys.short.gy/kmMW3o' },
+        { nama: 'NIK NUR DAMIA ALEESYA BINTI KAMARUZAMAN', url: 'https://VJT5ys.short.gy/hZtGsj' },
+        { nama: 'NOR AQILLIA BINTI NAZRUL SHAM', url: 'https://VJT5ys.short.gy/5z3IkX' },
+        { nama: 'NUR ADRIANA SYAQALEESYA BINTI AHMAD', url: 'https://VJT5ys.short.gy/SsI3gW' },
+        { nama: 'NUR AISYAH ZAFIERA BINTI JEFPRI', url: 'https://VJT5ys.short.gy/OY4d7d' },
+        { nama: 'NUR ALIYA DANISYA BINTI HANIZAN', url: 'https://VJT5ys.short.gy/D4Hki9' },
+        { nama: 'NUR AMIRA BINTI MD SHAZLIN AMIR', url: 'https://VJT5ys.short.gy/85ApjR' },
+        { nama: 'NUR FARISHA ALEEYA BINTI FAZLI', url: 'https://VJT5ys.short.gy/xuHsOo' },
+        { nama: 'NUR FITRIAH ELLISYA BINTI KHAIRUL AMIN', url: 'https://VJT5ys.short.gy/I0cZmn' },
+        { nama: 'NURIN AQILAH QASHIRINA BINTI JASLI', url: 'https://VJT5ys.short.gy/pZlBW8' },
+        { nama: 'NURSYAFIQAH NADHIRAH BINTI ABDUL RAHIM', url: 'https://VJT5ys.short.gy/0LiSMv' },
+        { nama: 'NURUL RASYIQAH BINTI ABDULLAH', url: 'https://VJT5ys.short.gy/RaqPp2' },
+        { nama: 'PUTERI INTAN LIYANA BINTI MOHD NOR', url: 'https://VJT5ys.short.gy/BboVYq' },
+        { nama: 'QASEH NURQISTINA BINTI JAMALUDIN', url: 'https://VJT5ys.short.gy/4ZGxun' },
+        { nama: 'QISTINA ALESYA BINTI KAMARUZZAMAN', url: 'https://VJT5ys.short.gy/yXUbAn' },
+        { nama: 'SYED DANIEL BIN SYED KHAIRUDDIN', url: 'https://VJT5ys.short.gy/jc2gIN' },
+        { nama: "U'LYA ADIBAH BINTI AZADEE", url: 'https://VJT5ys.short.gy/QvR2T8' }
+      ],
+      '5 B': [
+        { nama: 'AFIQ AIMAN BIN SHAMSATUL FASAL', url: 'https://VJT5ys.short.gy/hsWq5a' },
+        { nama: 'ATHIRAH ATIKAH BINTI ROSLI', url: 'https://VJT5ys.short.gy/jDIrLv' },
+        { nama: 'ELLYANA ZAHRA BINTI MOHD FARID', url: 'https://VJT5ys.short.gy/2j6p3r' },
+        { nama: 'FAKHRI RAZIQ BIN MOHD RADI', url: 'https://VJT5ys.short.gy/wLWH4G' },
+        { nama: 'HARIESYA MAISARA BINTI MOHAMAD HAZWAN', url: 'https://VJT5ys.short.gy/HA029Y' },
+        { nama: 'ISHA UMAIZA BINTI NORAZLAN', url: 'https://VJT5ys.short.gy/Gf3Tgh' },
+        { nama: 'KHAIRUL HAZIEQ BIN KHAIRUL FAIZAL', url: 'https://VJT5ys.short.gy/0TCQj0' },
+        { nama: 'MASTURRAH QAISARAH BINTI MUHAMMAD MASRRI', url: 'https://VJT5ys.short.gy/OY8C7h' },
+        { nama: 'MUHAMAD AKIFF BIN MASRULNIZAM', url: 'https://VJT5ys.short.gy/VbHkGI' },
+        { nama: 'MUHAMAD RAIYAN DHANI BIN MOHD RIDZUAN', url: 'https://VJT5ys.short.gy/qRvChK' },
+        { nama: 'MUHAMMAD ADIB FARHAD BIN MOHD FAIZAL', url: 'https://VJT5ys.short.gy/v1FVXD' },
+        { nama: 'MUHAMMAD AMIRUL NAIM BIN MOHD AZLAN', url: 'https://VJT5ys.short.gy/t1dpVo' },
+        { nama: 'MUHAMMAD ASWAD BIN ROZLAN', url: 'https://VJT5ys.short.gy/1Iadqn' },
+        { nama: 'MUHAMMAD SYAFIQ HAIKAL BIN SARIPUDIN', url: 'https://VJT5ys.short.gy/xHIgdS' },
+        { nama: 'MUHAMMAD SYUIB BIN ABDULLAH', url: 'https://VJT5ys.short.gy/HztJsL' },
+        { nama: 'MUHAMMAD ZIYAD RIZKY BIN MOHD RAIHAN', url: 'https://VJT5ys.short.gy/W0FwAx' },
+        { nama: 'NAYLI ZAWANAH BINTI ZULKEFLI', url: 'https://VJT5ys.short.gy/nz2Hgq' },
+        { nama: 'NOOR NABILAH BINTI AHMAD', url: 'https://VJT5ys.short.gy/GCrtPq' },
+        { nama: 'NUR ARISSA NAJWA BINTI MOHD RIZAL', url: 'https://VJT5ys.short.gy/8ptlpF' },
+        { nama: 'NUR DAYANA ARISSYA BINTI SHAHRONNIZAM', url: 'https://VJT5ys.short.gy/am1X7b' },
+        { nama: 'NUR ERYNA ELYSYA BINTI MOHD SYAMRI', url: 'https://VJT5ys.short.gy/lVdmlm' },
+        { nama: 'NUR FARISYA ADRIANA BINTI MAD UJANG', url: 'https://VJT5ys.short.gy/N8X2VF' },
+        { nama: 'NUR FATIN ATHIRAH BINTI NOFAIZAL', url: 'https://VJT5ys.short.gy/LqZDPe' },
+        { nama: 'NUR HAZIRAH BINTI HASNOL', url: 'https://VJT5ys.short.gy/5VbP51' },
+        { nama: 'NUR SYAHIRA MYSARA BINTI ABDULLAH', url: 'https://VJT5ys.short.gy/dgh0CX' },
+        { nama: 'NURALIAH UMAIRAH BINTI MOHD KHIRIL', url: 'https://VJT5ys.short.gy/Yclnnl' },
+        { nama: 'NURIN DANISH BIN HAFIZUL NURUL', url: 'https://VJT5ys.short.gy/26R1BO' },
+        { nama: 'NURMARDHIYAH BINTI MOHAMED ROSLI', url: 'https://VJT5ys.short.gy/Y6PruJ' },
+        { nama: 'PUTERI IFTI LIYANA BINTI MOHD JAMIL', url: 'https://VJT5ys.short.gy/ZMj81A' },
+        { nama: 'QASEH NUR ALIA BINTI HUZAINEY', url: 'https://VJT5ys.short.gy/lesyR8' },
+        { nama: 'SITI HAJAR NAJWA BINTI ZAINAL FADZIL', url: 'https://VJT5ys.short.gy/2HPHvP' },
+        { nama: 'TAUFIQ ISKANDAR MOHAMMAD FIRDAUS BIN ABDULLAH', url: 'https://VJT5ys.short.gy/9kJhtL' }
+      ],
+      '5 A': [
+        { nama: 'ABDUL AZIM BIN ZULKIFLI', url: 'https://VJT5ys.short.gy/Ilby1k' },
+        { nama: 'AHMAD NAUFAL BIN MOHD AIDIL', url: 'https://VJT5ys.short.gy/3NfnIO' },
+        { nama: 'ALIF IRFAN BIN KHARUL ANUAR', url: 'https://VJT5ys.short.gy/WJ6g2E' },
+        { nama: 'ARINA HADIRAH BINTI AHMAD YAZID', url: 'https://VJT5ys.short.gy/ESAGdc' },
+        { nama: 'HAZIQ AKHMAL ADHA BIN AZIZUL', url: 'https://VJT5ys.short.gy/VA5JFm' },
+        { nama: 'IMTIYAZ FAHMY BIN SYAIFUL RIZAL', url: 'https://VJT5ys.short.gy/07lHup' },
+        { nama: 'MOHAMAD FIRDAUS BIN ABDUL RAOFF', url: 'https://VJT5ys.short.gy/Da3ZCT' },
+        { nama: 'MUHAMMAD ALIF NAJMI BIN AZIZI', url: 'https://VJT5ys.short.gy/QAqoPy' },
+        { nama: 'MUHAMMAD AQIL ASYRAAF BIN MOHAMAD SAUFI', url: 'https://VJT5ys.short.gy/yIEB5P' },
+        { nama: 'MUHAMMAD FARHAN BIN SHAMSUL', url: 'https://VJT5ys.short.gy/b8DWP7' },
+        { nama: 'MUHAMMAD FARISH DANIEL BIN MOHD FADZIL', url: 'https://VJT5ys.short.gy/UVoLp8' },
+        { nama: 'MUHAMMAD HAFIY HAMIMI BIN MUHAMMAD ZAFFROL', url: 'https://VJT5ys.short.gy/PjGNvL' },
+        { nama: 'MUHAMMAD IMAN HAIKAL BIN MOHAMAD ROHIMI', url: 'https://VJT5ys.short.gy/Jibm4n' },
+        { nama: 'MUHAMMAD IZZUL ISLAM BIN MUHAMAD HAFIZ', url: 'https://VJT5ys.short.gy/lbgJJT' },
+        { nama: 'NAQEB NAZHAN BIN MOHD NAZRI', url: 'https://VJT5ys.short.gy/s5k7ta' },
+        { nama: 'NOR FATIHAH INSYIRAH BINTI AMRUDIN', url: 'https://VJT5ys.short.gy/FV5e9G' },
+        { nama: 'NUR ADANIA QASEH BINTI MOHD ZAHID', url: 'https://VJT5ys.short.gy/tUl2a0' },
+        { nama: 'NUR ADLINA QALEESYA BINTI MOHD RIZAL', url: 'https://VJT5ys.short.gy/WlaccQ' },
+        { nama: 'NUR AMALIYA QASHRINA BINTI MUHAMMAD RIZAL', url: 'https://VJT5ys.short.gy/GMqO6x' },
+        { nama: 'NUR RAUDHATUL SYAHIRAH BINTI MOHD SHAHRILL', url: 'https://VJT5ys.short.gy/D8j8E4' },
+        { nama: 'NURFATIHAH FAZIA BINTI MUHAMMAD FIRDAUS', url: 'https://VJT5ys.short.gy/QSrsUn' },
+        { nama: 'NURRO FIKAH BINTI JAMALUDDIN', url: 'https://VJT5ys.short.gy/0t13q0' },
+        { nama: 'NURULJANNAH BINTI MOHD HARAMAIEN', url: 'https://VJT5ys.short.gy/QkFuVB' },
+        { nama: 'SAFARINA HASMOTALIB BINTI ABDUL RAHMAN', url: 'https://VJT5ys.short.gy/xzS4SX' },
+        { nama: 'SHAFIRUL IZZAT BIN SHAIFUL ZAMRI', url: 'https://VJT5ys.short.gy/gN0Iox' },
+        { nama: 'SITI AFIQAH BINTI ZULKIFLI', url: 'https://VJT5ys.short.gy/yom4NX' },
+        { nama: "SUFFIA HANNIM BINTI ABDUL RAAFI'", url: 'https://VJT5ys.short.gy/3fDAHa' },
+        { nama: 'TENGKU HANAN ZULAIKHA BINTI TENGKU BAHROL AMAN', url: 'https://VJT5ys.short.gy/LuIlvY' },
+        { nama: 'WAN IMAN DANIAL BIN WAN FAIZAL', url: 'https://VJT5ys.short.gy/kEmFAi' }
       ]
     };
 
@@ -895,13 +1132,11 @@
       btnPrint: document.getElementById('btnPrint'),
       btnToggleManual: document.getElementById('btnToggleManual'),
       manualSection: document.getElementById('manualSection'),
-      manualForm: document.getElementById('manualForm'),
-      manualPassword: document.getElementById('manualPassword'),
-      manualTarikh: document.getElementById('manualTarikh'),
       manualNama: document.getElementById('manualNama'),
       manualKelas: document.getElementById('manualKelas'),
-      manualStatus: document.getElementById('manualStatus'),
-      btnCancelManual: document.getElementById('btnCancelManual')
+      btnCancelManual: document.getElementById('btnCancelManual'),
+      manualQuickLinks: document.getElementById('manualQuickLinks'),
+      manualQuickLinksList: document.getElementById('manualQuickLinksList')
     };
 
     function pad2(n) { return String(n).padStart(2, '0'); }
@@ -917,87 +1152,13 @@
 
     function bukaInputManual() {
       el.manualSection.classList.remove('hidden');
-      el.manualTarikh.value = el.filterTarikh.value || hariIniIso();
-      el.manualPassword.value = '';
       isiPilihanKelasManual(el.filterKelas.value || '');
       el.manualNama.value = '';
-      el.manualStatus.value = 'Hadir';
-      el.manualPassword.focus();
+      el.manualKelas.focus();
     }
 
     function tutupInputManual() {
       el.manualSection.classList.add('hidden');
-      el.manualForm.reset();
-    }
-
-    async function simpanManual(ev) {
-      ev.preventDefault();
-      const password = el.manualPassword.value.trim();
-      if (password !== GURU_PASSWORD) {
-        toast('Kata laluan guru tidak sah.', 'warn');
-        el.manualPassword.focus();
-        return;
-      }
-
-      const nama = el.manualNama.value.trim();
-      const kelas = el.manualKelas.value.trim();
-      const status = el.manualStatus.value;
-      const tarikhIso = el.manualTarikh.value || el.filterTarikh.value || hariIniIso();
-      const tarikhApi = formatTarikhApi(tarikhIso);
-
-      if (!nama || !kelas || !tarikhApi) {
-        toast('Sila lengkapkan maklumat murid.', 'warn');
-        return;
-      }
-
-      const masaKini = new Date().toLocaleTimeString('ms-MY', {
-        hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false
-      });
-
-      const rowBaru = {
-        Nama: nama,
-        Kelas: kelas,
-        Status: status,
-        Tarikh: tarikhApi,
-        Masa: masaKini,
-        Sumber: 'Manual Guru'
-      };
-
-      dataPenuh.unshift(rowBaru);
-      kemaskiniMasterMurid([rowBaru]);
-      isiPilihanKelas();
-      renderSemua();
-      simpanCache(dataPenuh);
-
-      const payload = {
-        action: 'manual',
-        sumber: 'manual_guru',
-        password,
-        tarikh: tarikhApi,
-        nama,
-        kelas,
-        status,
-        masa: masaKini
-      };
-
-      try {
-        const res = await fetch(SCRIPT_URL, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(payload),
-          redirect: 'follow'
-        });
-        if (!res.ok) throw new Error(`HTTP ${res.status}`);
-        const result = await bacaPayloadApi(res);
-        if (!result?.success) {
-          throw new Error(result?.message || 'Apps Script gagal simpan rekod manual.');
-        }
-        toast('Kehadiran manual berjaya disimpan.', 'ok');
-      } catch (_) {
-        toast('Rekod lokal disimpan. Semak Apps Script jika perlu.', 'warn');
-      }
-
-      tutupInputManual();
     }
 
     function formatMasaKini() {
@@ -1223,15 +1384,23 @@
       return Array.from(map.values());
     }
 
-    function muridTetapIkutKelas(kelas = '') {
-      if (!kelas) {
-        return Object.entries(SENARAI_MURID_TETAP).flatMap(([kelasItem, senarai]) =>
-          senarai.map(nama => ({ nama, kelas: normalKelasLabel(kelasItem) }))
-        );
-      }
+    function kelasPautanPantas() {
+      return Object.keys(PAUTAN_REKOD_PANTAS)
+        .map(normalKelasLabel)
+        .filter(Boolean)
+        .sort((a, b) => a.localeCompare(b, 'ms'));
+    }
 
+    function muridPautanIkutKelas(kelas = '') {
       const key = normalKelasLabel(kelas);
-      return (SENARAI_MURID_TETAP[key] || []).map(nama => ({ nama, kelas: key }));
+      const sumber = key ? (PAUTAN_REKOD_PANTAS[key] || []) : [];
+      return sumber.map(item => ({ nama: item.nama, kelas: key }));
+    }
+
+    function semuaMuridPautan() {
+      return Object.entries(PAUTAN_REKOD_PANTAS).flatMap(([kelas, senarai]) =>
+        senarai.map(item => ({ nama: item.nama, kelas: normalKelasLabel(kelas) }))
+      );
     }
 
     function bacaCache() {
@@ -1300,8 +1469,8 @@
 
     function isiPilihanKelas() {
       const current = el.filterKelas.value;
-      const sumberKelas = semuaMuridGabung().map(item => item.kelas);
-      const list = Array.from(new Set([...sumberKelas, ...KELAS_MANUAL_TETAP].map(normalKelasLabel).filter(k => k && k !== 'Tiada Kelas'))).sort((a,b) => a.localeCompare(b));
+      const sumberKelas = [...semuaMuridGabung(), ...semuaMuridPautan()].map(item => item.kelas);
+      const list = Array.from(new Set(sumberKelas.map(normalKelasLabel).filter(k => k && k !== 'Tiada Kelas'))).sort((a,b) => a.localeCompare(b));
       el.filterKelas.innerHTML = '<option value="">Semua kelas</option>';
       list.forEach(k => {
         const o = document.createElement('option');
@@ -1310,12 +1479,29 @@
         el.filterKelas.appendChild(o);
       });
       if (list.includes(current)) el.filterKelas.value = current;
+      isiPilihanNamaCarian(el.cariNama.value);
       isiPilihanKelasManual(el.manualKelas.value);
     }
 
+    function isiPilihanNamaCarian(pilihan = '') {
+      const kelasDipilih = normalKelasLabel(el.filterKelas.value);
+      const sumberNama = [...semuaMuridGabung(), ...semuaMuridPautan()]
+        .filter(item => !kelasDipilih || item.kelas === kelasDipilih)
+        .map(item => item.nama);
+      const list = Array.from(new Set(sumberNama.filter(Boolean))).sort((a, b) => a.localeCompare(b, 'ms'));
+
+      el.cariNama.innerHTML = '<option value="">Semua murid</option>';
+      list.forEach(nama => {
+        const o = document.createElement('option');
+        o.value = nama;
+        o.textContent = nama;
+        el.cariNama.appendChild(o);
+      });
+      if (pilihan && list.includes(pilihan)) el.cariNama.value = pilihan;
+    }
+
     function isiPilihanKelasManual(pilihan = '') {
-      const sumberKelas = semuaMuridGabung().map(item => item.kelas);
-      const list = Array.from(new Set([...sumberKelas, ...KELAS_MANUAL_TETAP].map(normalKelasLabel).filter(k => k && k !== 'Tiada Kelas'))).sort((a,b) => a.localeCompare(b));
+      const list = kelasPautanPantas();
       el.manualKelas.innerHTML = '<option value="">Pilih kelas</option>';
       list.forEach(k => {
         const o = document.createElement('option');
@@ -1329,7 +1515,7 @@
 
     function isiPilihanMuridManual() {
       const kelasDipilih = el.manualKelas.value;
-      const sumberNama = [...semuaMuridGabung(), ...muridTetapIkutKelas(kelasDipilih)]
+      const sumberNama = muridPautanIkutKelas(kelasDipilih)
         .filter(item => !kelasDipilih || item.kelas === kelasDipilih)
         .map(item => item.nama);
       const listNama = Array.from(
@@ -1345,6 +1531,44 @@
         el.manualNama.appendChild(o);
       });
       if (current && listNama.includes(current)) el.manualNama.value = current;
+      renderPautanRekodPantas();
+    }
+
+    function renderPautanRekodPantas() {
+      const kelasDipilih = normalKelasLabel(el.manualKelas.value);
+      const namaDipilih = String(el.manualNama.value || '').trim();
+      const senaraiAsal = PAUTAN_REKOD_PANTAS[kelasDipilih] || [];
+      const senarai = namaDipilih
+        ? senaraiAsal.filter(item => item.nama === namaDipilih)
+        : senaraiAsal;
+
+      el.manualQuickLinksList.innerHTML = '';
+      if (!senarai.length) {
+        el.manualQuickLinks.classList.add('hidden');
+        return;
+      }
+
+      senarai.forEach(item => {
+        const row = document.createElement('div');
+        row.className = 'quick-link-item';
+
+        const nama = document.createElement('div');
+        nama.className = 'quick-link-name';
+        nama.textContent = item.nama;
+
+        const link = document.createElement('a');
+        link.className = 'quick-link-btn';
+        link.href = item.url;
+        link.target = '_blank';
+        link.rel = 'noopener noreferrer';
+        link.textContent = 'Buka URL Kehadiran';
+
+        row.appendChild(nama);
+        row.appendChild(link);
+        el.manualQuickLinksList.appendChild(row);
+      });
+
+      el.manualQuickLinks.classList.remove('hidden');
     }
 
     function rowsDitapisAsas() {
@@ -1357,7 +1581,7 @@
         const kelasItem = bacaKelas(item);
         const tarikhItem = bacaTarikh(item);
 
-        const okNama = q ? nama.includes(q) : true;
+        const okNama = q ? nama === q : true;
         const okKelas = kelas ? kelasItem === kelas : true;
         const okTarikh = tarikhItem ? tarikhItem === tarikhApi : true;
         return okNama && okKelas && okTarikh;
@@ -1688,8 +1912,11 @@
       window.addEventListener('offline', () => { setNetworkUI(false); toast('Peranti offline.', 'warn'); });
 
       el.btnRefresh.addEventListener('click', ambilData);
-      el.cariNama.addEventListener('input', renderSemua);
-      el.filterKelas.addEventListener('change', renderSemua);
+      el.cariNama.addEventListener('change', renderSemua);
+      el.filterKelas.addEventListener('change', () => {
+        isiPilihanNamaCarian();
+        renderSemua();
+      });
       el.filterTarikh.addEventListener('change', ambilData);
       el.filterTarikh.addEventListener('click', bukaPemilihTarikh);
       el.filterTarikh.addEventListener('keydown', ev => {
@@ -1702,8 +1929,8 @@
       el.btnPrint.addEventListener('click', () => window.print());
       el.btnToggleManual.addEventListener('click', bukaInputManual);
       el.btnCancelManual.addEventListener('click', tutupInputManual);
-      el.manualForm.addEventListener('submit', simpanManual);
       el.manualKelas.addEventListener('change', isiPilihanMuridManual);
+      el.manualNama.addEventListener('change', renderPautanRekodPantas);
 
       initSorting();
       ambilData();
