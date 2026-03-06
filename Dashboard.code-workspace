@@ -1,0 +1,13 @@
+{
+	"folders": [
+		{
+			"path": "."
+		}
+	],
+	"settings": {
+		"firebridge.serviceAccountPaths": [
+			"c:\\Users\\Administrator\\Documents\\Dashboard\\manifest.json"
+		],
+		"liveServer.settings.port": 5501
+	}
+}
