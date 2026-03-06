@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-  <title>myHadir - Dashboard Kehadiran</title>
+  <title>Sistem pintar merekod kehadiran murid ke Kelas Tambahan di SMK Taman Medan</title>
 
   <link rel="manifest" href="manifest.json">
   <meta name="theme-color" content="#061427">
@@ -542,26 +542,6 @@
 
     .nav-btn.active { color: var(--brand); }
 
-    .debug-panel {
-      margin-top: 10px;
-      padding: 12px 14px;
-      border: 1px dashed rgba(120, 184, 255, 0.34);
-      border-radius: 14px;
-      background: rgba(7, 20, 39, 0.72);
-      color: #cfe3ff;
-      font-size: 0.84rem;
-      line-height: 1.5;
-    }
-
-    .debug-panel strong {
-      color: #ffffff;
-    }
-
-    .debug-panel code {
-      word-break: break-all;
-      color: #9bd0ff;
-    }
-
     @media (min-width: 768px) {
       body { padding-bottom: 24px; }
       .app-logo { width: clamp(50px, 4.2vw, 62px); }
@@ -609,7 +589,7 @@
           <img src="Untitled design.svg" alt="Logo myHadir" class="app-logo">
           <div class="brand-text">
             <h1 class="app-name">MyHadir</h1>
-            <p class="app-tagline">Sistem pintar merekod kehadiran murid</p>
+            <p class="app-tagline">Sistem pintar merekod kehadiran murid ke Kelas Tambahan di SMK Taman Medan</p>
           </div>
         </div>
         <p class="head-meta" id="masaKini">Memuatkan tarikh & masa...</p>
@@ -676,9 +656,6 @@
           <button id="btnPdf" class="btn-ghost" type="button">Muat Turun PDF</button>
           <button id="btnPrint" class="btn-ghost" type="button">Cetak</button>
         </div>
-      </div>
-      <div id="debugPanel" class="debug-panel">
-        <div><strong>Debug:</strong> menunggu percubaan fetch pertama.</div>
       </div>
     </section>
 
@@ -766,8 +743,74 @@
     const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbz-iXayYiVny_-bW4HEuPquQ-6x64M9ZT_kCM3jARi34vftiAFsUsXI2QJTVNGuNw/exec";
     const GURU_PASSWORD = 'myHadir1234';
     const CACHE_KEY = 'myhadir_cache_v2';
+    const MASTER_MURID_KEY = 'myhadir_master_murid_v1';
+    const KELAS_MANUAL_TETAP = ['5 I', '5 J'];
+    const SENARAI_MURID_TETAP = {
+      '5 I': [
+        'AISYA HUMAIRA BINTI SHAHRUL NORKAMAL AZWA',
+        'AMIN QHUSAIRY BIN IBRAHIM',
+        'ASMAANISA BINTI MOHD BASIRUDDIN',
+        'MITHANA KUMAR A/L RATHNA KUMAR',
+        'MOHD ARIEF HAIKAL BIN MOHD NADZRI',
+        'MONALISA ROSANA BINTI ABDULLAH',
+        'MUHAMMAD ADAM HAZIQ BIN MOHD EZAINI',
+        'MUHAMMAD AIDIL BIN ABDUL HAMID',
+        'MUHAMMAD AKIF IZWAN BIN MOHAMMAD AZAHAR',
+        'MUHAMMAD DANIEL HAIKAL BIN MOHD JOHARI',
+        'MUHAMMAD DZULFAQAR DZAKWAN BIN MOHAMAD SHAHRIL',
+        'MUHAMMAD HAZIQ IRFAN BIN MOHD BUKHARI',
+        'MUHAMMAD ISMA DANIAL BIN ISMANIZAM LUBIS',
+        'MUHAMMAD NUR HAIQAL BIN SUHAIRIN',
+        'MUHAMMAD RAIMI SYAZWAN BIN ABDUL MAJID',
+        'NADIATUL HUSNA BINTI ZULL',
+        'NOR AIN FARISYA BINTI MOHD.FAIZAL',
+        'NUR ALIYA BINTI MUSTAFA',
+        'NUR BATRISYIA BINTI MUAHMAD HIRDIR',
+        'NUR DINI DALILI BINTI NASRI',
+        'NUR ELIYANA ANISA BINTI SAFLI RIZUAN',
+        'NUR HAFRIZAL BIN ABDULLAH',
+        'NUR HUMAIRA DANIA BINTI SHUHAIRI',
+        'PUTERI NABILA LIYANA BINTI MOHAMED KARIT',
+        'RAJA KHAIRULNAIM BIN RAJA KAMALRULAZMAN',
+        'ZETY SAIDATUL ASMIDA BINTI ROZALI'
+      ],
+      '5 J': [
+        'AMRISH DANISH BIN ROHAIZAD',
+        'AQIL QAYYUM BIN MOHD YAZID',
+        'BHARHTH RAJ A/L ARUMUGAM',
+        'DANISH HAIKAL BIN MUHAMMAD RIDZWAN',
+        'KHARIL AZIZI A/L ASKARALI',
+        'MOHAMAD NABIL BIN MOHD ASRI',
+        'MUHAMMAD ADAM RIZKIN BIN ABDUL MUQADDIM',
+        'MUHAMMAD ADIEB THAQIEFF BIN ABDUL MALIK',
+        'MUHAMMAD AFIQ HAKIMI BIN MOHD AZRAIKA BASTHOMI',
+        'MUHAMMAD ALIEF SHAH BIN ZULKIFLI',
+        'MUHAMMAD ALIF AIMAN BIN RAHSIDI',
+        'MUHAMMAD AQIL BIN ABDUL GHANI',
+        'MUHAMMAD AZIM BIN ABDULLAH',
+        'MUHAMMAD HAIKAL BIN HAFIZAL AZMI',
+        'MUHAMMAD HAIKAL NAJMI BIN MD ISA',
+        'MUHAMMAD NAJMI DANIAL BIN MOHAMAD NASIR',
+        'MUHAMMAD NUH AQIL BIN SHAIFUL ADNAN',
+        'MUHAMMAD SHAH HAIKAL BIN MOHD FAUZI',
+        'MUHAMMAD ZARILSHAWARUL FITRI BIN KAMARUZAMAN',
+        'NAUFAL FAJAR MAULANA BIN ABDULLAH',
+        'NIL WAFIY DARWISY BIN MOHD SHARIZAL',
+        'NUR ALISYA BINTI HARIZAN',
+        'NUR BHAITIE ALEESYA BINTI KHAIRUDI',
+        'NUR EZANI NAJWA BINTI ABDULLAH',
+        'NUR IMAN AZ-ZAHRA BINTI ABDULLAH',
+        'NUR SHAZLIYANA BATRISYIA BINTI ABDULLAH',
+        'NURUL FARZANAH BINTI ZULKAFLI',
+        'NURUL QISTINA MYSARA BINTI KU MOHD ZULIZY',
+        'NURUL SHAHIRAH BINTI MOHD MAZLAN',
+        'PUNITHA A/P LETCHUMANAN',
+        'SAMITHRA A/P RAJANDERAN'
+      ]
+    };
 
     let dataPenuh = [];
+    let masterMurid = [];
     let chartStatus;
     let chartKelas;
     let sortKey = 'Nama';
@@ -805,7 +848,6 @@
       filterKelas: document.getElementById('filterKelas'),
       btnRefresh: document.getElementById('btnRefresh'),
       metaData: document.getElementById('metaData'),
-      debugPanel: document.getElementById('debugPanel'),
       rowCount: document.getElementById('rowCount'),
       tableBody: document.getElementById('tableBody'),
       toastWrap: document.getElementById('toastWrap'),
@@ -882,6 +924,7 @@
       };
 
       dataPenuh.unshift(rowBaru);
+      kemaskiniMasterMurid([rowBaru]);
       isiPilihanKelas();
       renderSemua();
       simpanCache(dataPenuh);
@@ -959,18 +1002,7 @@
       }, 2200);
     }
 
-    function setDebugInfo(info = {}) {
-      const rows = [
-        `<div><strong>Tarikh filter:</strong> ${info.tarikhIso || '-'}</div>`,
-        `<div><strong>Tarikh API:</strong> ${info.tarikhApi || '-'}</div>`,
-        `<div><strong>URL API:</strong> <code>${info.url || SCRIPT_URL}</code></div>`,
-        `<div><strong>Status:</strong> ${info.status || '-'}</div>`,
-        `<div><strong>HTTP:</strong> ${info.http || '-'}</div>`,
-        `<div><strong>Rekod diterima:</strong> ${info.rows ?? '-'}</div>`,
-        `<div><strong>Ralat:</strong> ${info.error || '-'}</div>`
-      ];
-      el.debugPanel.innerHTML = rows.join('');
-    }
+    function setDebugInfo() {}
 
     function bacaMedan(item, candidates = []) {
       for (const key of candidates) {
@@ -1021,8 +1053,18 @@
       });
     }
 
+    function normalKelasLabel(value) {
+      const text = String(value || '').trim().replace(/\s+/g, ' ');
+      if (!text) return '';
+      const ringkas = text.match(/^(\d)\s*([a-z])$/i);
+      if (ringkas) return `${ringkas[1]} ${ringkas[2].toUpperCase()}`;
+      const penuh = text.match(/^(\d)\s+([a-z])$/i);
+      if (penuh) return `${penuh[1]} ${penuh[2].toUpperCase()}`;
+      return text.toUpperCase() === text ? text : text.replace(/\b([a-z])/g, s => s.toUpperCase());
+    }
+
     function bacaKelas(item) {
-      return bacaMedan(item, ['Kelas', 'kelas', 'Nama_Kelas', 'Nama Kelas']) || 'Tiada Kelas';
+      return normalKelasLabel(bacaMedan(item, ['Kelas', 'kelas', 'Nama_Kelas', 'Nama Kelas'])) || 'Tiada Kelas';
     }
 
     function bacaNama(item) {
@@ -1092,6 +1134,66 @@
       try { localStorage.setItem(CACHE_KEY, JSON.stringify({ rows, at: new Date().toISOString() })); } catch (_) {}
     }
 
+    function normalNamaKelas(item) {
+      const nama = bacaNama(item);
+      const kelas = bacaKelas(item);
+      if (!nama || !kelas || kelas === 'Tiada Kelas') return null;
+      return { nama, kelas };
+    }
+
+    function gabungMasterMurid(sumber = []) {
+      const map = new Map();
+      [...masterMurid, ...sumber]
+        .map(normalNamaKelas)
+        .filter(Boolean)
+        .forEach(item => map.set(`${item.nama}||${item.kelas}`, item));
+
+      masterMurid = Array.from(map.values()).sort((a, b) => {
+        const ikutKelas = a.kelas.localeCompare(b.kelas, 'ms');
+        return ikutKelas || a.nama.localeCompare(b.nama, 'ms');
+      });
+    }
+
+    function simpanMasterMurid() {
+      try { localStorage.setItem(MASTER_MURID_KEY, JSON.stringify(masterMurid)); } catch (_) {}
+    }
+
+    function bacaMasterMurid() {
+      try {
+        const raw = localStorage.getItem(MASTER_MURID_KEY);
+        if (!raw) return [];
+        const parsed = JSON.parse(raw);
+        return Array.isArray(parsed) ? parsed : [];
+      } catch (_) {
+        return [];
+      }
+    }
+
+    function kemaskiniMasterMurid(sumber = []) {
+      gabungMasterMurid(sumber);
+      simpanMasterMurid();
+    }
+
+    function semuaMuridGabung() {
+      const map = new Map();
+      [...masterMurid, ...dataPenuh]
+        .map(normalNamaKelas)
+        .filter(Boolean)
+        .forEach(item => map.set(`${item.nama}||${item.kelas}`, item));
+      return Array.from(map.values());
+    }
+
+    function muridTetapIkutKelas(kelas = '') {
+      if (!kelas) {
+        return Object.entries(SENARAI_MURID_TETAP).flatMap(([kelasItem, senarai]) =>
+          senarai.map(nama => ({ nama, kelas: normalKelasLabel(kelasItem) }))
+        );
+      }
+
+      const key = normalKelasLabel(kelas);
+      return (SENARAI_MURID_TETAP[key] || []).map(nama => ({ nama, kelas: key }));
+    }
+
     function bacaCache() {
       try {
         const raw = localStorage.getItem(CACHE_KEY);
@@ -1158,7 +1260,8 @@
 
     function isiPilihanKelas() {
       const current = el.filterKelas.value;
-      const list = Array.from(new Set(dataPenuh.map(bacaKelas))).sort((a,b) => a.localeCompare(b));
+      const sumberKelas = semuaMuridGabung().map(item => item.kelas);
+      const list = Array.from(new Set([...sumberKelas, ...KELAS_MANUAL_TETAP].map(normalKelasLabel).filter(k => k && k !== 'Tiada Kelas'))).sort((a,b) => a.localeCompare(b));
       el.filterKelas.innerHTML = '<option value="">Semua kelas</option>';
       list.forEach(k => {
         const o = document.createElement('option');
@@ -1171,7 +1274,8 @@
     }
 
     function isiPilihanKelasManual(pilihan = '') {
-      const list = Array.from(new Set(dataPenuh.map(bacaKelas))).sort((a,b) => a.localeCompare(b));
+      const sumberKelas = semuaMuridGabung().map(item => item.kelas);
+      const list = Array.from(new Set([...sumberKelas, ...KELAS_MANUAL_TETAP].map(normalKelasLabel).filter(k => k && k !== 'Tiada Kelas'))).sort((a,b) => a.localeCompare(b));
       el.manualKelas.innerHTML = '<option value="">Pilih kelas</option>';
       list.forEach(k => {
         const o = document.createElement('option');
@@ -1185,13 +1289,11 @@
 
     function isiPilihanMuridManual() {
       const kelasDipilih = el.manualKelas.value;
+      const sumberNama = [...semuaMuridGabung(), ...muridTetapIkutKelas(kelasDipilih)]
+        .filter(item => !kelasDipilih || item.kelas === kelasDipilih)
+        .map(item => item.nama);
       const listNama = Array.from(
-        new Set(
-          dataPenuh
-            .filter(item => !kelasDipilih || bacaKelas(item) === kelasDipilih)
-            .map(bacaNama)
-            .filter(Boolean)
-        )
+        new Set(sumberNama.filter(Boolean))
       ).sort((a, b) => a.localeCompare(b, 'ms'));
 
       const current = el.manualNama.value;
@@ -1479,6 +1581,7 @@
           throw new Error(payload.message || 'Apps Script memulangkan ralat.');
         }
         dataPenuh = dapatkanRowsApi(payload);
+        kemaskiniMasterMurid(dataPenuh);
 
         setDebugInfo({
           tarikhIso,
@@ -1511,6 +1614,7 @@
         const c = bacaCache();
         if (c) {
           dataPenuh = c.rows;
+          kemaskiniMasterMurid(dataPenuh);
           isiPilihanKelas();
           renderSemua();
           el.metaData.textContent = `Data cache digunakan (${new Date(c.at).toLocaleString('ms-MY')})`;
@@ -1534,6 +1638,7 @@
     }
 
     function init() {
+      masterMurid = bacaMasterMurid();
       el.filterTarikh.value = hariIniIso();
       formatMasaKini();
       setInterval(formatMasaKini, 1000);
