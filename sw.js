@@ -1,58 +1,77 @@
-const CACHE_NAME = 'dashboard-kehadiran-v18';
-const ASSETS = [
+const CACHE_NAME = 'dashboard-kehadiran-v19';
+const CORE_ASSETS = [
   './',
   './index.html',
   './manifest.json',
-  './icon-192.png',
+  './icon-192x192.png',
   './icon-512.png',
-  './Untitled design.svg'
+  './icon-512x512.png',
+  './Untitled%20design.svg',
+  './logo-sekolah.jpg'
 ];
 
 self.addEventListener('install', event => {
-  event.waitUntil(caches.open(CACHE_NAME).then(cache => cache.addAll(ASSETS)));
+  event.waitUntil(
+    caches.open(CACHE_NAME).then(async cache => {
+      await Promise.allSettled(
+        CORE_ASSETS.map(asset => cache.add(new Request(asset, { cache: 'reload' })))
+      );
+    })
+  );
   self.skipWaiting();
 });
 
 self.addEventListener('activate', event => {
-  event.waitUntil(
-    caches.keys().then(keys => Promise.all(
-      keys.filter(key => key !== CACHE_NAME).map(key => caches.delete(key))
-    ))
-  );
-  self.clients.claim();
+  event.waitUntil((async () => {
+    const keys = await caches.keys();
+    await Promise.all(keys.filter(key => key !== CACHE_NAME).map(key => caches.delete(key)));
+    await self.clients.claim();
+
+    if (self.registration.navigationPreload) {
+      await self.registration.navigationPreload.enable();
+    }
+  })());
 });
 
 self.addEventListener('fetch', event => {
   if (event.request.method !== 'GET') return;
 
   const url = new URL(event.request.url);
-
-  // Jangan intercept request cross-origin (contoh API Google Script/CDN).
   if (url.origin !== self.location.origin) return;
 
-  // Navigasi halaman: cuba network dulu, fallback ke cache index.
   if (event.request.mode === 'navigate') {
-    event.respondWith(
-      fetch(event.request).catch(() => caches.match('./index.html'))
-    );
+    event.respondWith((async () => {
+      try {
+        const preloadResponse = await event.preloadResponse;
+        if (preloadResponse) return preloadResponse;
+
+        const networkResponse = await fetch(event.request);
+        const cache = await caches.open(CACHE_NAME);
+        cache.put('./index.html', networkResponse.clone());
+        return networkResponse;
+      } catch {
+        return (
+          (await caches.match(event.request)) ||
+          (await caches.match('./index.html'))
+        );
+      }
+    })());
     return;
   }
 
-  // Aset statik same-origin: cache-first.
-  event.respondWith(
-    caches.match(event.request).then(cached => {
-      if (cached) return cached;
-      return fetch(event.request).then(response => {
-        if (!response || !response.ok) return response;
-        const copy = response.clone();
-        caches.open(CACHE_NAME).then(cache => cache.put(event.request, copy));
-        return response;
-      });
-    })
-  );
+  event.respondWith((async () => {
+    const cached = await caches.match(event.request);
+    if (cached) return cached;
+
+    try {
+      const response = await fetch(event.request);
+      if (response && response.ok) {
+        const cache = await caches.open(CACHE_NAME);
+        cache.put(event.request, response.clone());
+      }
+      return response;
+    } catch {
+      return caches.match('./index.html');
+    }
+  })());
 });
-
-
-
-
-
