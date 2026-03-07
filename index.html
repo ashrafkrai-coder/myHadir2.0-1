@@ -754,7 +754,7 @@
         <div class="quick-links-head">
           <div>
             <h4>Pautan Rekod Pantas</h4>
-            <p>Pilih kelas dan nama murid, kemudian tekan butang untuk buka URL kehadiran.</p>
+            <p>Pilih Kelas dan Nama kemudian tekan untuk Rekod Hadir.</p>
           </div>
         </div>
         <div id="manualQuickLinksList" class="quick-links-list"></div>
@@ -806,6 +806,7 @@
     const GURU_PASSWORD = 'myHadir1234';
     const CACHE_KEY = 'myhadir_cache_v2';
     const MASTER_MURID_KEY = 'myhadir_master_murid_v1';
+    const MANUAL_UNLOCK_KEY = 'myhadir_manual_unlocked';
     const PAUTAN_REKOD_PANTAS = {
       '5 PVMA': [
         { nama: 'AINUL MARDHIAH BINTI MOHD SULAIMAN', url: 'https://VJT5ys.short.gy/O74bHu' },
@@ -1156,6 +1157,7 @@
     }
 
     function bukaInputManual() {
+      if (!sahkanAksesInputManual()) return;
       el.manualSection.classList.remove('hidden');
       isiPilihanKelasManual(el.filterKelas.value || '');
       el.manualNama.value = '';
@@ -1164,6 +1166,26 @@
 
     function tutupInputManual() {
       el.manualSection.classList.add('hidden');
+    }
+
+    function aksesInputManualDibenarkan() {
+      return sessionStorage.getItem(MANUAL_UNLOCK_KEY) === '1';
+    }
+
+    function sahkanAksesInputManual() {
+      if (aksesInputManualDibenarkan()) return true;
+
+      const input = window.prompt('Masukkan kata laluan untuk buka Input Manual:');
+      if (input === null) return false;
+
+      if (input === GURU_PASSWORD) {
+        sessionStorage.setItem(MANUAL_UNLOCK_KEY, '1');
+        toast('Akses input manual dibenarkan.', 'ok');
+        return true;
+      }
+
+      toast('Kata laluan tidak tepat.', 'warn');
+      return false;
     }
 
     function formatMasaKini() {
@@ -1566,7 +1588,7 @@
         link.href = item.url;
         link.target = '_blank';
         link.rel = 'noopener noreferrer';
-        link.textContent = 'Buka URL Kehadiran';
+        link.textContent = 'Tekan untuk Rekod Hadir';
 
         row.appendChild(nama);
         row.appendChild(link);
