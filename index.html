@@ -1609,8 +1609,55 @@
       });
     }
 
+    function rowsPaparanDitapis() {
+      const q = el.cariNama.value.trim().toLowerCase();
+      const kelasDipilih = el.filterKelas.value;
+      const tarikhApi = formatTarikhApi(el.filterTarikh.value);
+      const roster = [...semuaMuridGabung(), ...semuaMuridPautan()];
+      const mapPaparan = new Map();
+
+      roster
+        .map(normalNamaKelas)
+        .filter(Boolean)
+        .forEach(item => {
+          mapPaparan.set(`${item.nama}||${item.kelas}`, {
+            Nama: item.nama,
+            Kelas: item.kelas,
+            Tarikh: tarikhApi,
+            Status: 'Tidak Hadir',
+            Masa: '',
+            __defaultTidakHadir: true
+          });
+        });
+
+      rowsDitapisAsas().forEach(item => {
+        const nama = bacaNama(item) || '-';
+        const kelas = bacaKelas(item);
+        const key = `${nama}||${kelas}`;
+        mapPaparan.set(key, {
+          ...item,
+          Nama: nama,
+          Kelas: kelas,
+          Tarikh: bacaTarikh(item) || tarikhApi,
+          Status: normalStatus(bacaStatusMentah(item))
+        });
+      });
+
+      return Array.from(mapPaparan.values()).filter(item => {
+        const nama = bacaNama(item).toLowerCase();
+        const kelasItem = bacaKelas(item);
+        const tarikhItem = bacaTarikh(item) || tarikhApi;
+
+        const okNama = q ? nama === q : true;
+        const okKelas = kelasDipilih ? kelasItem === kelasDipilih : true;
+        const okTarikh = tarikhApi ? tarikhItem === tarikhApi : true;
+        return okNama && okKelas && okTarikh;
+      });
+    }
+
     function rowsDitapis() {
-      return rowsDitapisAsas();
+      const rowsPaparan = rowsPaparanDitapis();
+      return rowsPaparan.length ? rowsPaparan : rowsDitapisAsas();
     }
 
     function sortRows(rows) {
