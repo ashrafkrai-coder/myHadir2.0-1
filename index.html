@@ -796,7 +796,7 @@
   </nav>
 
   <script>
-    const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbz-iXayYiVny_-bW4HEuPquQ-6x64M9ZT_kCM3jARi34vftiAFsUsXI2QJTVNGuNw/exec";
+    const SCRIPT_URL = "https://script.google.com/a/macros/moe-dl.edu.my/s/AKfycbz-iXayYiVny_-bW4HEuPquQ-6x64M9ZT_kCM3jARi34vftiAFsUsXI2QJTVNGuNw/exec";
     const GURU_PASSWORD = 'myHadir1234';
     const CACHE_KEY = 'myhadir_cache_v2';
     const MASTER_MURID_KEY = 'myhadir_master_murid_v1';
@@ -1834,6 +1834,12 @@
       renderCharts(rows);
     }
 
+    function paparFallbackTempatan() {
+      dataPenuh = [];
+      isiPilihanKelas();
+      renderSemua();
+    }
+
     function muatTurunPdf() {
       const jsPdfLib = window.jspdf && window.jspdf.jsPDF;
       if (!jsPdfLib) {
@@ -1952,8 +1958,9 @@
           el.metaData.textContent = `Data cache digunakan (${new Date(c.at).toLocaleString('ms-MY')})`;
           toast('Guna data simpanan tempatan.', 'warn');
         } else {
-          el.tableBody.innerHTML = '<tr><td colspan="3" class="empty">Tiada data untuk dipaparkan.</td></tr>';
-          el.metaData.textContent = `Gagal ambil data: ${err.message || 'Tidak diketahui'}`;
+          paparFallbackTempatan();
+          el.metaData.textContent = `Gagal ambil data langsung: ${err.message || 'Tidak diketahui'}`;
+          toast('API dashboard gagal dicapai. Papar senarai tempatan sahaja.', 'warn');
         }
       }
     }

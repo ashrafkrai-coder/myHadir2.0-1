@@ -20,33 +20,97 @@ const CLASS_SPREADSHEETS = {
 
 function doGet(e) {
   try {
-    const tarikh = normalTarikh((e && e.parameter && e.parameter.tarikh) || '');
-    const rows = [];
+    const params = (e && e.parameter) || {};
+    if (params.tarikh) {
+      return jsonOutput(getKehadiranByTarikh(params.tarikh));
+    }
 
-    Object.keys(CLASS_SPREADSHEETS).forEach(function(kelas) {
-      const ss = SpreadsheetApp.openById(CLASS_SPREADSHEETS[kelas]);
-      const sheet = ss.getSheetByName(SHEET_NAME);
-      if (!sheet) return;
-      rows.push.apply(rows, bacaSheetKelas(sheet, kelas, tarikh));
-    });
-
-    rows.sort(function(a, b) {
-      const ikutKelas = String(a.Kelas || '').localeCompare(String(b.Kelas || ''));
-      if (ikutKelas !== 0) return ikutKelas;
-      return String(a.Nama || '').localeCompare(String(b.Nama || ''));
-    });
-
-    return jsonOutput({
-      success: true,
-      tarikh: tarikh,
-      data: rows
-    });
+    return htmlGateOutput_();
   } catch (err) {
     return jsonOutput({
       success: false,
       message: err && err.message ? err.message : 'Ralat doGet'
     });
   }
+}
+
+function getKehadiranByTarikh(tarikhInput) {
+  const tarikh = normalTarikh(tarikhInput || '');
+  const rows = [];
+
+  Object.keys(CLASS_SPREADSHEETS).forEach(function(kelas) {
+    const ss = SpreadsheetApp.openById(CLASS_SPREADSHEETS[kelas]);
+    const sheet = ss.getSheetByName(SHEET_NAME);
+    if (!sheet) return;
+    rows.push.apply(rows, bacaSheetKelas(sheet, kelas, tarikh));
+  });
+
+  rows.sort(function(a, b) {
+    const ikutKelas = String(a.Kelas || '').localeCompare(String(b.Kelas || ''));
+    if (ikutKelas !== 0) return ikutKelas;
+    return String(a.Nama || '').localeCompare(String(b.Nama || ''));
+  });
+
+  return {
+    success: true,
+    tarikh: tarikh,
+    data: rows
+  };
+}
+
+function htmlGateOutput_() {
+  const email = getUserEmail_();
+  const role = getUserRole_(email);
+  const selamat = sanitizeHtml_(email || 'tidak dikenal pasti');
+
+  if (role === 'murid') {
+    return HtmlService.createHtmlOutput(
+      "<div style='font-family:Arial,sans-serif;max-width:720px;margin:56px auto;padding:24px;border:1px solid #f3b7b7;border-radius:16px;background:#fff7f7;color:#8a1f1f'>" +
+      "<h2 style='margin-top:0'>Akses Disekat</h2>" +
+      "<p>URL ini hanya untuk guru DELIMa.</p>" +
+      "<p>Akaun semasa: <strong>" + selamat + "</strong></p>" +
+      "</div>"
+    ).setTitle('Akses Disekat');
+  }
+
+  if (role !== 'guru') {
+    return HtmlService.createHtmlOutput(
+      "<div style='font-family:Arial,sans-serif;max-width:720px;margin:56px auto;padding:24px;border:1px solid #d7deea;border-radius:16px;background:#f8fbff;color:#183153'>" +
+      "<h2 style='margin-top:0'>Log Masuk Guru Diperlukan</h2>" +
+      "<p>Sila buka URL ini menggunakan akaun guru DELIMa yang bermula dengan <strong>g-</strong>.</p>" +
+      "<p>Akaun semasa: <strong>" + selamat + "</strong></p>" +
+      "</div>"
+    ).setTitle('Log Masuk Guru');
+  }
+
+  return HtmlService.createHtmlOutput(
+    "<div style='font-family:Arial,sans-serif;max-width:720px;margin:56px auto;padding:24px;border:1px solid #cce7d2;border-radius:16px;background:#f6fff8;color:#114b22'>" +
+    "<h2 style='margin-top:0'>Akses Guru Berjaya</h2>" +
+    "<p>Akaun guru DELIMa disahkan: <strong>" + selamat + "</strong></p>" +
+    "<p>Endpoint API dashboard aktif. Gunakan parameter <code>?tarikh=dd/MM/yyyy</code> untuk respons JSON.</p>" +
+    "</div>"
+  ).setTitle('Akses Guru');
+}
+
+function getUserEmail_() {
+  return String(Session.getActiveUser().getEmail() || '').trim().toLowerCase();
+}
+
+function getUserRole_(email) {
+  const userEmail = String(email || '').trim().toLowerCase();
+  if (!userEmail) return 'unknown';
+  if (userEmail.indexOf('g-') === 0) return 'guru';
+  if (userEmail.indexOf('m-') === 0) return 'murid';
+  return 'other';
+}
+
+function sanitizeHtml_(value) {
+  return String(value || '')
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
 }
 
 function doPost(e) {
@@ -111,7 +175,7 @@ function bacaSheetKelas(sheet, kelasDefault, tarikhTapis) {
   if (values.length < 2) return [];
 
   const headers = values[0].map(function(item) {
-    return String(item || '').trim();
+    return normalizeHeaderValue_(item);
   });
   const result = [];
 
@@ -258,4 +322,11 @@ function jsonOutput(obj) {
   return ContentService
     .createTextOutput(JSON.stringify(obj))
     .setMimeType(ContentService.MimeType.JSON);
+}
+
+function normalizeHeaderValue_(value) {
+  if (Object.prototype.toString.call(value) === '[object Date]' && !isNaN(value)) {
+    return Utilities.formatDate(value, Session.getScriptTimeZone(), 'dd/MM/yyyy');
+  }
+  return String(value || '').trim();
 }
