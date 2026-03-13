@@ -802,6 +802,7 @@
     const CACHE_KEY = 'myhadir_cache_v2';
     const MASTER_MURID_KEY = 'myhadir_master_murid_v1';
     const PADAN_TAB_KEHADIRAN = true;
+    const SENARAI_KELAS_FALLBACK = ['5 A', '5 B', '5 C', '5 D', '5 G', '5 H', '5 I', '5 J', '5 PVMA'];
     const FETCH_OPTIONS = { cache: 'no-cache', redirect: 'follow', mode: 'cors', credentials: 'include' };
     const JSONP_TIMEOUT_MS = 10000;
     const MANUAL_UNLOCK_KEY = 'myhadir_manual_unlocked';
@@ -1495,7 +1496,10 @@
     function isiPilihanKelas() {
       const current = el.filterKelas.value;
       const sumberKelas = [...semuaMuridGabung(), ...semuaMuridPautan()].map(item => item.kelas);
-      const list = Array.from(new Set(sumberKelas.map(normalKelasLabel).filter(k => k && k !== 'Tiada Kelas'))).sort((a,b) => a.localeCompare(b));
+      let list = Array.from(new Set(sumberKelas.map(normalKelasLabel).filter(k => k && k !== 'Tiada Kelas'))).sort((a,b) => a.localeCompare(b));
+      if (!list.length) {
+        list = SENARAI_KELAS_FALLBACK.slice();
+      }
       el.filterKelas.innerHTML = '<option value="">Semua kelas</option>';
       list.forEach(k => {
         const o = document.createElement('option');
