@@ -1625,10 +1625,10 @@
 
         const okNama = q ? nama === q : true;
         const okKelas = kelas ? kelasItem === kelas : true;
-      const okTarikh = tarikhApi ? tarikhItem === tarikhApi : true;
-      return okNama && okKelas && okTarikh;
-    });
-  }
+        const okTarikh = tarikhItem ? tarikhItem === tarikhApi : true;
+        return okNama && okKelas && okTarikh;
+      });
+    }
 
     function rowsPaparanDitapis() {
       const q = el.cariNama.value.trim().toLowerCase();
@@ -1677,7 +1677,6 @@
     }
 
     function rowsDitapis() {
-      if (PADAN_TAB_KEHADIRAN) return rowsDitapisAsas();
       const rowsPaparan = rowsPaparanDitapis();
       return rowsPaparan.length ? rowsPaparan : rowsDitapisAsas();
     }
