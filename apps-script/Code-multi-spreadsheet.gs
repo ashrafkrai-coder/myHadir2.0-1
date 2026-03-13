@@ -1,11 +1,8 @@
-const GURU_PASSWORD = 'myHadir1234';
+﻿const GURU_PASSWORD = 'myHadir1234';
+const API_TOKEN = 'myhadir-token-2026';
 const SHEET_NAME = 'Kehadiran';
 const META_HEADERS = ['Nama', 'Kelas', 'Masa Akhir', 'Sumber Akhir', 'Kemaskini ISO'];
 
-/*
-  Tukar nama kelas di bawah ikut padanan sebenar.
-  Saya masukkan 9 ID yang anda beri sebagai template terus.
-*/
 const CLASS_SPREADSHEETS = {
   '5 PVMA': '1uvg1CtZG8vM_afe2FFIlIXDCGFqAiHC3mM3-_zNSX6Q',
   '5 J': '1lSGvyWTxKreBf1-QNwNfLDLNJsmgDut-d9vITIFAOBY',
@@ -22,7 +19,16 @@ function doGet(e) {
   try {
     const params = (e && e.parameter) || {};
     if (params.tarikh) {
-      return jsonOutput(getKehadiranByTarikh(params.tarikh));
+      if (!tokenValid_(params)) {
+        const access = semakAkses_();
+        if (!access.allowed) {
+          return jsonOutput({
+            success: false,
+            message: access.message
+          }, params);
+        }
+      }
+      return jsonOutput(getKehadiranByTarikh(params.tarikh), params);
     }
 
     return htmlGateOutput_();
@@ -30,7 +36,7 @@ function doGet(e) {
     return jsonOutput({
       success: false,
       message: err && err.message ? err.message : 'Ralat doGet'
-    });
+    }, e && e.parameter);
   }
 }
 
@@ -83,13 +89,16 @@ function htmlGateOutput_() {
     ).setTitle('Log Masuk Guru');
   }
 
-  return HtmlService.createHtmlOutput(
-    "<div style='font-family:Arial,sans-serif;max-width:720px;margin:56px auto;padding:24px;border:1px solid #cce7d2;border-radius:16px;background:#f6fff8;color:#114b22'>" +
-    "<h2 style='margin-top:0'>Akses Guru Berjaya</h2>" +
-    "<p>Akaun guru DELIMa disahkan: <strong>" + selamat + "</strong></p>" +
-    "<p>Endpoint API dashboard aktif. Gunakan parameter <code>?tarikh=dd/MM/yyyy</code> untuk respons JSON.</p>" +
-    "</div>"
-  ).setTitle('Akses Guru');
+  return HtmlService.createHtmlOutputFromFile('Index')
+    .setTitle('MyHadir');
+}
+
+function semakAkses_() {
+  const email = getUserEmail_();
+  const role = getUserRole_(email);
+  if (role === 'guru') return { allowed: true };
+  if (role === 'murid') return { allowed: false, message: 'Akses API disekat (murid).' };
+  return { allowed: false, message: 'Log masuk guru diperlukan.' };
 }
 
 function getUserEmail_() {
@@ -161,12 +170,12 @@ function doPost(e) {
       column: dateCol,
       tarikh: tarikh,
       kelas: kelas
-    });
+    }, e && e.parameter);
   } catch (err) {
     return jsonOutput({
       success: false,
       message: err && err.message ? err.message : 'Ralat doPost'
-    });
+    }, e && e.parameter);
   }
 }
 
@@ -185,7 +194,7 @@ function bacaSheetKelas(sheet, kelasDefault, tarikhTapis) {
   for (var i = 1; i < values.length; i += 1) {
     const row = values[i];
     const nama = String(row[0] || '').trim();
-    const kelas = normalKelas(row[1] || kelasDefault || '');
+    const kelas = normalKelas(kelasDefault || '');
     const status = String(row[dateCol] || '').trim();
     if (!nama || !kelas || !status) continue;
 
@@ -290,8 +299,9 @@ function normalStatus(value) {
   const text = String(value || '').trim().toLowerCase();
   if (!text) return 'Hadir';
   if (text === 'h' || text === 'hadir' || text === 'present' || text === '1' || text === 'true' || text === 'ya') return 'Hadir';
-  if (text === 'th' || text === 'tidak hadir' || text === '0' || text === 'false') return 'Tidak Hadir';
-  if (text.indexOf('tidak hadir') !== -1 || text.indexOf('x hadir') !== -1 || text.indexOf('absen') !== -1 || text.indexOf('ponteng') !== -1) return 'Tidak Hadir';
+  if (text === 'th' || text === 'tidak hadir' || text === 'absen' || text === 'ponteng' || text === 'x hadir' || text === '0' || text === 'false') return 'Tidak Hadir';
+  if (/(^|[^a-z])hadir([^a-z]|$)/.test(text) || text.includes('present')) return 'Hadir';
+  if (text.includes('tidak hadir') || text.includes('x hadir') || text.includes('absen') || text.includes('ponteng')) return 'Tidak Hadir';
   return 'Hadir';
 }
 
@@ -318,7 +328,14 @@ function bacaJsonBody(e) {
   return JSON.parse(raw);
 }
 
-function jsonOutput(obj) {
+function jsonOutput(obj, params) {
+  const callback = String((params && params.callback) || '').trim();
+  if (callback) {
+    const body = callback + '(' + JSON.stringify(obj) + ');';
+    return ContentService
+      .createTextOutput(body)
+      .setMimeType(ContentService.MimeType.JAVASCRIPT);
+  }
   return ContentService
     .createTextOutput(JSON.stringify(obj))
     .setMimeType(ContentService.MimeType.JSON);
@@ -330,3 +347,12 @@ function normalizeHeaderValue_(value) {
   }
   return String(value || '').trim();
 }
+function tokenValid_(params) {
+  const token = String((params && params.token) || '').trim();
+  return token && token === API_TOKEN;
+}
+
+
+
+
+

@@ -1,0 +1,2025 @@
+﻿<!DOCTYPE html>
+<html lang="ms">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <title>Sistem pintar merekod kehadiran murid ke Kelas Tambahan di SMK Taman Medan</title>
+
+  <link rel="manifest" href="manifest.json">
+  <meta name="theme-color" content="#061427">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
+  <meta name="apple-mobile-web-app-title" content="myHadir">
+  <link rel="icon" type="image/png" sizes="192x192" href="icon-192x192.png">
+  <link rel="icon" type="image/png" sizes="512x512" href="icon-512.png">
+  <link rel="apple-touch-icon" sizes="192x192" href="icon-192x192.png">
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,500,0,0" rel="stylesheet">
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.3/dist/chart.umd.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js"></script>
+
+  <style>
+    :root {
+      --bg: #030c1b;
+      --surface: #0b1e37;
+      --surface-2: #112b4c;
+      --text: #eaf3ff;
+      --muted: #9cb4d7;
+      --line: #254a75;
+      --brand: #4ea3ff;
+      --brand-soft: #14375d;
+      --ok: #3ed5b2;
+      --ok-soft: #0f3f44;
+      --warn: #ff7984;
+      --warn-soft: #4d2430;
+      --info: #78b8ff;
+      --info-soft: #173b66;
+      --radius: 16px;
+      --shadow: 0 16px 36px rgba(1, 7, 16, 0.46);
+    }
+
+    @media (prefers-color-scheme: dark) {
+      :root {
+        --bg: #020916;
+        --surface: #091a31;
+        --surface-2: #102745;
+        --text: #eaf3ff;
+        --muted: #96add0;
+        --line: #214266;
+        --brand: #60b1ff;
+        --brand-soft: #153454;
+        --ok: #52debb;
+        --ok-soft: #123d40;
+        --warn: #ff8891;
+        --warn-soft: #472330;
+        --info: #8ac4ff;
+        --info-soft: #18375f;
+        --shadow: 0 16px 38px rgba(1, 6, 14, 0.52);
+      }
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      font-family: 'Plus Jakarta Sans', sans-serif;
+      background:
+        radial-gradient(1200px 460px at 6% -140px, #1b5fa0 0%, transparent 60%),
+        radial-gradient(940px 360px at 108% -100px, #0f4f8c 0%, transparent 55%),
+        radial-gradient(780px 360px at 50% 120%, #0a2f5b 0%, transparent 64%),
+        linear-gradient(160deg, #040d1e 0%, #081a34 42%, #0b2242 100%),
+        var(--bg);
+      color: var(--text);
+      font-size: 14px;
+      line-height: 1.45;
+      padding-bottom: 82px;
+    }
+
+    .material-symbols-outlined {
+      font-variation-settings: 'FILL' 0, 'wght' 500, 'GRAD' 0, 'opsz' 24;
+      vertical-align: middle;
+      user-select: none;
+    }
+
+    .container { width: min(1120px, 100% - 24px); margin-inline: auto; }
+
+    .sticky-head {
+      position: sticky;
+      top: 0;
+      z-index: 20;
+      backdrop-filter: blur(10px);
+      background: color-mix(in srgb, #0b203b 82%, transparent);
+      border-bottom: 1px solid color-mix(in srgb, #4c8fce 32%, transparent);
+    }
+
+    .head-row {
+      min-height: 72px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 12px;
+      padding: 10px 0;
+    }
+
+    .brand-wrap {
+      display: flex;
+      flex-direction: column;
+      align-items: flex-start;
+      gap: 4px;
+      min-width: 0;
+      flex: 1;
+    }
+
+    .brand-main {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      min-width: 0;
+    }
+
+    .app-logo {
+      width: clamp(40px, 10vw, 56px);
+      height: auto;
+      object-fit: contain;
+      display: block;
+      max-width: 100%;
+      flex-shrink: 0;
+    }
+
+    .brand-text { min-width: 0; }
+    .app-name {
+      margin: 0;
+      font-size: clamp(.98rem, 3.9vw, 1.14rem);
+      line-height: 1.08;
+      font-weight: 800;
+      color: var(--text);
+      letter-spacing: .1px;
+    }
+    .app-tagline {
+      margin: 2px 0 0;
+      color: var(--muted);
+      font-size: clamp(.68rem, 2.6vw, .82rem);
+      line-height: 1.2;
+      display: -webkit-box;
+      -webkit-box-orient: vertical;
+      -webkit-line-clamp: 2;
+      overflow: hidden;
+    }
+    .head-meta { margin: 0; color: var(--muted); font-size: .78rem; }
+
+    .network {
+      min-height: 44px;
+      border: 1px solid var(--line);
+      border-radius: 999px;
+      padding: 8px 12px;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      font-weight: 600;
+      background: linear-gradient(135deg, #123558 0%, #102e4b 100%);
+    }
+
+    .network.online { color: #9ef1d3; border-color: #2d7d70; background: linear-gradient(135deg, #15453f 0%, #145046 100%); }
+    .network.offline { color: #ffc3ab; border-color: #874f3f; background: linear-gradient(135deg, #4b2a24 0%, #5a3329 100%); }
+
+    .head-right {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      flex-shrink: 0;
+    }
+
+    .school-logo-head {
+      width: clamp(46px, 8vw, 60px);
+      height: auto;
+      object-fit: contain;
+      display: block;
+      background: rgba(255, 255, 255, 0.95);
+      border: 1px solid color-mix(in srgb, #ffffff 40%, var(--line));
+      border-radius: 10px;
+      padding: 3px;
+      box-shadow: 0 8px 18px rgba(0, 0, 0, .25);
+    }
+
+    main { padding: 14px 0 20px; }
+
+    .surface {
+      background: linear-gradient(148deg, color-mix(in srgb, var(--surface) 92%, #071426) 0%, color-mix(in srgb, var(--surface-2) 88%, #0a1b33) 100%);
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+    }
+
+    .kpi-grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 10px;
+    }
+
+    .kpi {
+      padding: 14px;
+      min-height: 110px;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      animation: fadeIn .35s ease both;
+    }
+
+    .kpi-top {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      color: var(--muted);
+      font-weight: 600;
+      font-size: .88rem;
+    }
+
+    .kpi-icon {
+      width: 38px;
+      height: 38px;
+      border-radius: 12px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 20px;
+    }
+
+    .icon-total { background: var(--brand-soft); color: var(--brand); }
+    .icon-hadir { background: var(--ok-soft); color: var(--ok); }
+    .icon-tidak { background: var(--warn-soft); color: var(--warn); }
+    .icon-peratus { background: var(--info-soft); color: var(--info); }
+
+    .kpi-value { font-size: clamp(1.32rem, 3.9vw, 1.85rem); font-weight: 800; }
+
+    .filter-wrap { margin-top: 12px; overflow: hidden; }
+
+    details.filter-panel > summary {
+      list-style: none;
+      cursor: pointer;
+      min-height: 44px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 12px 14px;
+      font-weight: 700;
+      border-bottom: 1px solid var(--line);
+    }
+
+    details.filter-panel > summary::-webkit-details-marker { display: none; }
+
+    .summary-icon { transition: transform .25s ease; }
+    details[open] .summary-icon { transform: rotate(180deg); }
+
+    .filters {
+      padding: 12px;
+      display: grid;
+      gap: 10px;
+    }
+
+    .field label { display: block; margin-bottom: 6px; color: var(--muted); font-weight: 600; }
+
+    .input, .select, .btn {
+      width: 100%;
+      min-height: 44px;
+      border-radius: 12px;
+      border: 1px solid var(--line);
+      padding: 10px 12px;
+      background: var(--surface);
+      color: var(--text);
+      font: inherit;
+    }
+
+    .input:focus, .select:focus, .btn:focus {
+      outline: none;
+      border-color: #7ab9ff;
+      box-shadow: 0 0 0 3px rgba(90, 166, 255, .24);
+    }
+
+    #filterKelas {
+      background: linear-gradient(160deg, var(--surface-2) 0%, var(--surface) 100%);
+      border-color: color-mix(in srgb, var(--brand) 38%, var(--line));
+      color: var(--text);
+      appearance: none;
+      -webkit-appearance: none;
+      -moz-appearance: none;
+      padding-right: 40px;
+      background-image:
+        url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath fill='%239ecbff' d='M7 10l5 5 5-5z'/%3E%3C/svg%3E"),
+        linear-gradient(160deg, var(--surface-2) 0%, var(--surface) 100%);
+      background-repeat: no-repeat, no-repeat;
+      background-position: right 12px center, center;
+      background-size: 18px 18px, 100% 100%;
+    }
+
+    #filterKelas option {
+      background: var(--surface);
+      color: var(--text);
+    }
+
+    #filterTarikh {
+      appearance: none;
+      -webkit-appearance: none;
+      color-scheme: dark;
+      cursor: pointer;
+      border-color: color-mix(in srgb, var(--brand) 38%, var(--line));
+      background:
+        url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath fill='%239ecbff' d='M7 2a1 1 0 0 1 1 1v1h8V3a1 1 0 1 1 2 0v1h1a3 3 0 0 1 3 3v11a4 4 0 0 1-4 4H6a4 4 0 0 1-4-4V7a3 3 0 0 1 3-3h1V3a1 1 0 0 1 1-1Zm12 8H5v8a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-8ZM5 8h14V7a1 1 0 0 0-1-1H6a1 1 0 0 0-1 1v1Z'/%3E%3C/svg%3E") no-repeat right 12px center / 18px 18px,
+        linear-gradient(160deg, var(--surface-2) 0%, var(--surface) 100%);
+      padding-right: 40px;
+      letter-spacing: 0.01em;
+      font-weight: 600;
+      color: color-mix(in srgb, var(--text) 88%, var(--brand));
+      caret-color: var(--brand);
+    }
+
+    #filterTarikh::-webkit-calendar-picker-indicator {
+      opacity: 0;
+      width: 20px;
+      height: 20px;
+      cursor: pointer;
+    }
+
+    #filterTarikh::-webkit-datetime-edit,
+    #filterTarikh::-webkit-datetime-edit-fields-wrapper,
+    #filterTarikh::-webkit-datetime-edit-text,
+    #filterTarikh::-webkit-datetime-edit-month-field,
+    #filterTarikh::-webkit-datetime-edit-day-field,
+    #filterTarikh::-webkit-datetime-edit-year-field {
+      color: color-mix(in srgb, var(--text) 88%, var(--brand));
+    }
+
+    #filterTarikh:invalid {
+      color: var(--muted);
+    }
+
+    #filterTarikh:invalid::-webkit-datetime-edit,
+    #filterTarikh:invalid::-webkit-datetime-edit-fields-wrapper,
+    #filterTarikh:invalid::-webkit-datetime-edit-text,
+    #filterTarikh:invalid::-webkit-datetime-edit-month-field,
+    #filterTarikh:invalid::-webkit-datetime-edit-day-field,
+    #filterTarikh:invalid::-webkit-datetime-edit-year-field {
+      color: var(--muted);
+    }
+
+    .btn {
+      cursor: pointer;
+      font-weight: 700;
+      background: linear-gradient(140deg, #59adff 0%, #2d7fd8 46%, #1958a0 100%);
+      color: #fff;
+      border: 0;
+      transition: transform .14s ease;
+    }
+
+    .btn:active { transform: scale(.98); }
+
+    .meta-row {
+      padding: 0 12px 12px;
+      color: var(--muted);
+      font-size: .9rem;
+    }
+
+    .action-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-top: 8px;
+    }
+
+    .manual-wrap {
+      margin-top: 12px;
+      padding: 14px;
+      border: 1px solid color-mix(in srgb, var(--brand) 30%, var(--line));
+      background: linear-gradient(145deg, #112f4f 0%, #0f2640 100%);
+    }
+
+    .manual-head {
+      margin: 0 0 10px;
+      font-size: 1rem;
+      font-weight: 700;
+    }
+
+    .manual-form {
+      display: grid;
+      gap: 10px;
+    }
+
+    .manual-grid {
+      display: grid;
+      gap: 10px;
+    }
+
+    .manual-note {
+      margin: 0;
+      color: var(--muted);
+      font-size: .85rem;
+    }
+
+    .manual-actions {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+
+    .quick-links {
+      margin-top: 6px;
+      border: 1px solid color-mix(in srgb, var(--brand) 24%, var(--line));
+      border-radius: 14px;
+      padding: 12px;
+      background: linear-gradient(180deg, rgba(13, 35, 58, 0.9) 0%, rgba(9, 24, 40, 0.95) 100%);
+    }
+
+    .quick-links-head {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      margin-bottom: 8px;
+    }
+
+    .quick-links-head h4 {
+      margin: 0;
+      font-size: .96rem;
+    }
+
+    .quick-links-head p {
+      margin: 2px 0 0;
+      color: var(--muted);
+      font-size: .82rem;
+    }
+
+    .quick-links-list {
+      display: grid;
+      gap: 8px;
+    }
+
+    .quick-link-item {
+      display: grid;
+      gap: 8px;
+      grid-template-columns: 1fr auto;
+      align-items: center;
+      border: 1px solid rgba(142, 194, 255, 0.12);
+      border-radius: 12px;
+      padding: 10px 12px;
+      background: rgba(255, 255, 255, 0.03);
+    }
+
+    .quick-link-name {
+      font-weight: 600;
+      font-size: .92rem;
+      line-height: 1.35;
+    }
+
+    .quick-link-btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 40px;
+      padding: 0 14px;
+      border-radius: 10px;
+      background: linear-gradient(135deg, #7ee7ff 0%, #4caeff 45%, #1f7cdb 100%);
+      color: #03121f;
+      font-weight: 800;
+      text-decoration: none;
+      white-space: nowrap;
+    }
+
+    .hidden {
+      display: none !important;
+    }
+
+    .btn-ghost {
+      min-height: 44px;
+      border: 1px solid var(--line);
+      border-radius: 10px;
+      background: linear-gradient(140deg, #12375a 0%, #102f4d 100%);
+      color: var(--text);
+      padding: 10px 12px;
+      font: inherit;
+      font-weight: 700;
+      cursor: pointer;
+    }
+
+    .chart-scroll {
+      margin-top: 12px;
+      display: flex;
+      gap: 10px;
+      overflow-x: auto;
+      scroll-snap-type: x mandatory;
+      padding-bottom: 4px;
+    }
+
+    .chart-card {
+      min-width: min(92vw, 500px);
+      scroll-snap-align: start;
+      padding: 14px;
+    }
+
+    .chart-card h3 {
+      margin: 0 0 10px;
+      font-size: 1.04rem;
+      font-weight: 700;
+    }
+
+    .chart-title-kelas {
+      font-size: clamp(1.08rem, 2.7vw, 1.28rem);
+      letter-spacing: .2px;
+    }
+
+    .chart-box { height: 230px; }
+
+    .table-wrap { margin-top: 12px; padding: 14px; }
+    .table-head { display: flex; justify-content: space-between; gap: 8px; align-items: center; margin-bottom: 10px; }
+    .table-head h3 { margin: 0; font-size: 1rem; }
+
+    .table-scroll { overflow-x: auto; border: 1px solid var(--line); border-radius: 12px; }
+
+    table {
+      border-collapse: collapse;
+      width: 100%;
+      min-width: 640px;
+      background: color-mix(in srgb, var(--surface) 92%, #071325);
+      font-size: .92rem;
+    }
+
+    th, td { padding: 10px 12px; border-bottom: 1px solid var(--line); text-align: left; }
+    th {
+      font-weight: 700;
+      color: var(--muted);
+      background: linear-gradient(140deg, #184774 0%, #133a60 100%);
+      position: sticky;
+      top: 0;
+      z-index: 1;
+      cursor: pointer;
+      user-select: none;
+      white-space: nowrap;
+    }
+
+    tr:last-child td { border-bottom: 0; }
+
+    .pill {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 28px;
+      border-radius: 999px;
+      padding: 4px 10px;
+      font-size: .82rem;
+      font-weight: 700;
+    }
+
+    .pill.hadir { background: var(--ok-soft); color: var(--ok); }
+    .pill.tidak { background: var(--warn-soft); color: var(--warn); }
+
+    .empty { text-align: center; color: var(--muted); padding: 16px; }
+
+    .toast-wrap {
+      position: fixed;
+      right: 12px;
+      bottom: 92px;
+      z-index: 30;
+      display: grid;
+      gap: 8px;
+      pointer-events: none;
+    }
+
+    .toast {
+      border-radius: 10px;
+      color: #fff;
+      padding: 10px 12px;
+      min-width: 220px;
+      max-width: 320px;
+      transform: translateY(10px);
+      opacity: 0;
+      transition: all .24s ease;
+      box-shadow: 0 10px 24px rgba(0, 0, 0, .18);
+    }
+
+    .toast.show { transform: translateY(0); opacity: 1; }
+    .toast.ok { background: #0f7466; }
+    .toast.warn { background: #9a4a2e; }
+
+    .bottom-nav {
+      position: fixed;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      z-index: 25;
+      background: linear-gradient(170deg, #0a1f39 0%, #0f2e52 100%);
+      border-top: 1px solid var(--line);
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      padding: 6px max(10px, env(safe-area-inset-right)) calc(6px + env(safe-area-inset-bottom)) max(10px, env(safe-area-inset-left));
+    }
+
+    .nav-btn {
+      min-height: 44px;
+      border: 0;
+      background: transparent;
+      color: var(--muted);
+      display: grid;
+      place-items: center;
+      gap: 2px;
+      font-size: .73rem;
+      font-weight: 600;
+      cursor: pointer;
+    }
+
+    .nav-btn.active { color: var(--brand); }
+
+    @media (min-width: 768px) {
+      body { padding-bottom: 24px; }
+      .app-logo { width: clamp(50px, 4.2vw, 62px); }
+      .app-name { font-size: 1.08rem; }
+      .app-tagline { font-size: .8rem; }
+      .head-meta { font-size: .82rem; }
+      .kpi-grid { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+      details.filter-panel > summary { display: none; }
+      details.filter-panel { padding-top: 12px; }
+      details.filter-panel[open] .filters, details.filter-panel .filters { display: grid; }
+      .filters { grid-template-columns: 1.4fr 1fr 1fr auto; align-items: end; }
+      .filters .field:last-child { width: 140px; }
+      .meta-row { padding-top: 6px; }
+      .action-row { justify-content: flex-end; }
+      .manual-grid { grid-template-columns: 1fr 1fr; }
+      .chart-scroll { overflow: visible; display: grid; grid-template-columns: 1fr 1fr; }
+      .chart-card { min-width: 0; }
+      .bottom-nav { display: none; }
+    }
+
+    @media print {
+      .sticky-head,
+      .filter-wrap,
+      .bottom-nav,
+      .toast-wrap { display: none !important; }
+
+      body { padding-bottom: 0; background: #fff; }
+      .surface { box-shadow: none; border-color: #d8d8d8; }
+      main { padding-top: 0; }
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(4px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+  </style>
+</head>
+<body>
+  <div id="toastWrap" class="toast-wrap" aria-live="polite"></div>
+
+  <header class="sticky-head">
+    <div class="container head-row">
+      <div class="brand-wrap">
+        <div class="brand-main">
+          <img src="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHhtbG5zOnhsaW5rPSJodHRwOi8vd3d3LnczLm9yZy8xOTk5L3hsaW5rIiB3aWR0aD0iNTEyIiB6b29tQW5kUGFuPSJtYWduaWZ5IiB2aWV3Qm94PSIwIDAgMzg0IDM4My45OTk5ODYiIGhlaWdodD0iNTEyIiBwcmVzZXJ2ZUFzcGVjdFJhdGlvPSJ4TWlkWU1pZCBtZWV0IiB2ZXJzaW9uPSIxLjAiPjxkZWZzPjxmaWx0ZXIgeD0iMCUiIHk9IjAlIiB3aWR0aD0iMTAwJSIgaGVpZ2h0PSIxMDAlIiBpZD0iZDBjZTdkNGMzMyI+PGZlQ29sb3JNYXRyaXggdmFsdWVzPSIwIDAgMCAwIDEgMCAwIDAgMCAxIDAgMCAwIDAgMSAwIDAgMCAxIDAiIGNvbG9yLWludGVycG9sYXRpb24tZmlsdGVycz0ic1JHQiIvPjwvZmlsdGVyPjxmaWx0ZXIgeD0iMCUiIHk9IjAlIiB3aWR0aD0iMTAwJSIgaGVpZ2h0PSIxMDAlIiBpZD0iNmJkY2Q4NzlhYyI+PGZlQ29sb3JNYXRyaXggdmFsdWVzPSIwIDAgMCAwIDEgMCAwIDAgMCAxIDAgMCAwIDAgMSAwLjIxMjYgMC43MTUyIDAuMDcyMiAwIDAiIGNvbG9yLWludGVycG9sYXRpb24tZmlsdGVycz0ic1JHQiIvPjwvZmlsdGVyPjxjbGlwUGF0aCBpZD0iOGJhMmFjNGIxMSI+PHBhdGggZD0iTSAtNDQuMjU3ODEyIC03LjM0NzY1NiBMIC00NC4yNTc4MTIgNDI2LjQzNzUgQyAtNDQuMjU3ODEyIDQ1Mi4xMTcxODggLTIzLjQzNzUgNDcyLjkzNzUgMi4yNDIxODggNDcyLjkzNzUgTCAzODAuMDE1NjI1IDQ3Mi45Mzc1IEMgNDA1LjY5OTIxOSA0NzIuOTM3NSA0MjYuNTE1NjI1IDQ1Mi4xMTcxODggNDI2LjUxNTYyNSA0MjYuNDM3NSBMIDQyNi41MTU2MjUgLTcuMzQ3NjU2IEMgNDI2LjUxNTYyNSAtMTkuNjc5Njg4IDQyMS42MTcxODggLTMxLjUwNzgxMiA0MTIuODk4NDM4IC00MC4yMjY1NjIgQyA0MDQuMTc1NzgxIC00OC45NDkyMTkgMzkyLjM1MTU2MiAtNTMuODQ3NjU2IDM4MC4wMTU2MjUgLTUzLjg0NzY1NiBMIDIuMjQyMTg4IC01My44NDc2NTYgQyAtMjMuNDM3NSAtNTMuODQ3NjU2IC00NC4yNTc4MTIgLTMzLjAyNzM0NCAtNDQuMjU3ODEyIC03LjM0NzY1NiBaIE0gLTQ0LjI1NzgxMiAtNy4zNDc2NTYgIiBjbGlwLXJ1bGU9Im5vbnplcm8iLz48L2NsaXBQYXRoPjxtYXNrIGlkPSIxYWY0ODA0MTZmIj48ZyBmaWx0ZXI9InVybCgjZDBjZTdkNGMzMykiPjxnIGZpbHRlcj0idXJsKCM2YmRjZDg3OWFjKSIgdHJhbnNmb3JtPSJtYXRyaXgoMC43NjAyNTQsIDAsIDAsIDAuNzYwMjU0LCAtMTkyLjU3OTk2OSwgLTIwMC43NTkwOTYpIj48aW1hZ2UgeD0iMCIgeT0iMCIgd2lkdGg9IjEwMjQiIHhsaW5rOmhyZWY9ImRhdGE6aW1hZ2UvcG5nO2Jhc2U2NCxpVkJPUncwS0dnb0FBQUFOU1VoRVVnQUFCQUFBQUFRQUNBQUFBQUJhZG5SZkFBQUFBbUpMUjBRQS80ZVB6TDhBQUNBQVNVUkJWSGljN2QxcGtKMVhmZWZ4YzU3bjN0NVh0WHJSMHQyU0xBbFozaGRzd051d0pnVk9DRU1Ha3N4UVU1bUJWTUtRU2dnMXI2ZHFxbEtaWkpKSlFjcVRxWkJrbUJURmtqQUpDUk9HeFlDQnNURmc0MFdXSmRteTlsM2RyZTVXci9mZTV6bnpvbVY1aytSdTY1NCs1LzZlNytkRklFZ3QvUi9kNS9uZHN6M25HQU1BQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUE0Qk85Wi9yR01yN214d0FBQUFCSlJVNUVya0pnZ2c9PSIgaGVpZ2h0PSIxMDI0IiBwcmVzZXJ2ZUFzcGVjdFJhdGlvPSJ4TWlkWU1pZCBtZWV0Ii8+PC9nPjwvZz48L2c+PC9zdmc+" alt="Logo myHadir" class="app-logo">
+          <div class="brand-text">
+            <h1 class="app-name">MyHadir</h1>
+            <p class="app-tagline">Sistem pintar merekod kehadiran murid ke Kelas Tambahan di SMK Taman Medan</p>
+          </div>
+        </div>
+        <p class="head-meta" id="masaKini">Memuatkan tarikh & masa...</p>
+      </div>
+      <div class="head-right">
+        <div id="statusNetwork" class="network online" role="status" aria-live="polite">
+          <span class="material-symbols-outlined">wifi</span>
+          <span>Online</span>
+        </div>
+        <img src="data:image/jpeg;base64,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…/9k=" alt="Logo Sekolah" class="school-logo-head">
+      </div>
+    </div>
+  </header>
+
+  <main class="container">
+    <section class="kpi-grid" aria-label="Ringkasan KPI">
+      <article class="surface kpi">
+        <div class="kpi-top"><span>Jumlah Murid</span><span class="kpi-icon icon-total material-symbols-outlined">groups</span></div>
+        <div class="kpi-value" id="statJumlah">0</div>
+      </article>
+      <article class="surface kpi">
+        <div class="kpi-top"><span>Jumlah Hadir</span><span class="kpi-icon icon-hadir material-symbols-outlined">check_circle</span></div>
+        <div class="kpi-value" id="statHadir">0</div>
+      </article>
+      <article class="surface kpi">
+        <div class="kpi-top"><span>Tidak Hadir</span><span class="kpi-icon icon-tidak material-symbols-outlined">cancel</span></div>
+        <div class="kpi-value" id="statTidak">0</div>
+      </article>
+      <article class="surface kpi">
+        <div class="kpi-top"><span>Peratus Kehadiran</span><span class="kpi-icon icon-peratus material-symbols-outlined">donut_small</span></div>
+        <div class="kpi-value" id="statPeratus">0%</div>
+      </article>
+    </section>
+
+    <section class="surface filter-wrap">
+      <details class="filter-panel" open>
+        <summary>
+          Penapis Carian
+          <span class="summary-icon material-symbols-outlined">expand_more</span>
+        </summary>
+        <div class="filters">
+          <div class="field">
+            <label for="cariNama">Carian Nama Murid</label>
+            <select id="cariNama" class="select">
+              <option value="">Semua murid</option>
+            </select>
+          </div>
+          <div class="field">
+            <label for="filterTarikh">Tarikh</label>
+            <input id="filterTarikh" class="input" type="date">
+          </div>
+          <div class="field">
+            <label for="filterKelas">Kelas</label>
+            <select id="filterKelas" class="select"><option value="">Semua kelas</option></select>
+          </div>
+          <div class="field">
+            <label>&nbsp;</label>
+            <button id="btnRefresh" class="btn" type="button">Refresh</button>
+          </div>
+        </div>
+      </details>
+      <div class="meta-row">
+        <div id="metaData">Menunggu data...</div>
+        <div class="action-row">
+          <button id="btnToggleManual" class="btn-ghost" type="button">Input Manual</button>
+          <button id="btnPdf" class="btn-ghost" type="button">Muat Turun PDF</button>
+          <button id="btnPrint" class="btn-ghost" type="button">Cetak</button>
+        </div>
+      </div>
+    </section>
+
+    <section id="manualSection" class="surface manual-wrap hidden" aria-label="Input manual kehadiran">
+      <h3 class="manual-head">Input Kehadiran Manual (Guru)</h3>
+      <div class="manual-form">
+        <div class="manual-grid">
+          <div class="field">
+            <label for="manualKelas">Kelas</label>
+            <select id="manualKelas" class="select" required>
+              <option value="">Pilih kelas</option>
+            </select>
+          </div>
+          <div class="field">
+            <label for="manualNama">Nama Murid</label>
+            <select id="manualNama" class="select" required>
+              <option value="">Pilih murid</option>
+            </select>
+          </div>
+        </div>
+        <div class="manual-actions">
+          <button id="btnCancelManual" class="btn-ghost" type="button">Tutup</button>
+        </div>
+      </div>
+      <div id="manualQuickLinks" class="quick-links hidden" aria-live="polite">
+        <div id="manualQuickLinksList" class="quick-links-list"></div>
+      </div>
+    </section>
+
+    <section class="chart-scroll" aria-label="Statistik Kehadiran">
+      <article class="surface chart-card">
+        <h3>Agihan Status Kehadiran</h3>
+        <div class="chart-box"><canvas id="chartStatus"></canvas></div>
+      </article>
+      <article class="surface chart-card">
+        <h3 class="chart-title-kelas">Peratus Kehadiran Mengikut Kelas</h3>
+        <div class="chart-box"><canvas id="chartKelas"></canvas></div>
+      </article>
+    </section>
+
+    <section class="surface table-wrap" id="muridSection">
+      <div class="table-head">
+        <h3>Data Murid</h3>
+        <div id="rowCount" class="head-meta">0 rekod</div>
+      </div>
+      <div class="table-scroll">
+        <table>
+          <thead>
+            <tr>
+              <th data-sort="Nama">Nama</th>
+              <th data-sort="Kelas">Kelas</th>
+              <th data-sort="Status">Status</th>
+            </tr>
+          </thead>
+          <tbody id="tableBody">
+            <tr><td class="empty" colspan="3">Sedang mengambil data...</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+  </main>
+
+  <nav class="bottom-nav" aria-label="Navigasi bawah">
+    <button class="nav-btn active" type="button"><span class="material-symbols-outlined">dashboard</span>Dashboard</button>
+    <button class="nav-btn" type="button" onclick="document.querySelector('.chart-scroll').scrollIntoView({behavior:'smooth'})"><span class="material-symbols-outlined">query_stats</span>Statistik</button>
+    <button class="nav-btn" type="button" onclick="document.getElementById('muridSection').scrollIntoView({behavior:'smooth'})"><span class="material-symbols-outlined">groups</span>Murid</button>
+    <button class="nav-btn" type="button"><span class="material-symbols-outlined">settings</span>Tetapan</button>
+  </nav>
+
+  <script>
+    const SCRIPT_URL = window.location.href.split('?')[0];
+    const GURU_PASSWORD = 'myHadir1234';
+    const CACHE_KEY = 'myhadir_cache_v2';
+    const MASTER_MURID_KEY = 'myhadir_master_murid_v1';
+    const PADAN_TAB_KEHADIRAN = true;
+    const FETCH_OPTIONS = { cache: 'no-cache', redirect: 'follow', mode: 'cors', credentials: 'include' };
+    const MANUAL_UNLOCK_KEY = 'myhadir_manual_unlocked';
+    const PAUTAN_REKOD_PANTAS = {
+      '5 PVMA': [
+        { nama: 'AINUL MARDHIAH BINTI MOHD SULAIMAN', url: 'https://VJT5ys.short.gy/O74bHu' },
+        { nama: 'MUHAMMAD ADAM BIN JENISWAR AGUS', url: 'https://VJT5ys.short.gy/YOMMwr' },
+        { nama: 'MUHAMMAD NAJMI BIN AHMAD HAZIZUL HAKIM', url: 'https://VJT5ys.short.gy/aknOKt' },
+        { nama: 'NUR AINA NADHIRAH BINTI AZHAR', url: 'https://VJT5ys.short.gy/x3S2wd' },
+        { nama: 'NUR AMIERA MAISARAH BINTI MOHD HAFSYAM AMIR', url: 'https://VJT5ys.short.gy/oa3R9H' },
+        { nama: 'NUR AQILAH BINTI MOHD NOR KHAIRUL', url: 'https://VJT5ys.short.gy/y3Hi2B' },
+        { nama: 'NUR BATRISYIA AFIQAH BINTI ROSWADINATA', url: 'https://VJT5ys.short.gy/PkEGHh' },
+        { nama: 'NUR FARAH ALIAH BINTI MOHD ASWAD', url: 'https://VJT5ys.short.gy/PqHujK' },
+        { nama: 'NUR FATIN NABILAH BINTI HESHAM', url: 'https://VJT5ys.short.gy/qNGnJD' },
+        { nama: 'SAFWANA BINTI MUSTAPA KAMA SHAH', url: 'https://VJT5ys.short.gy/NqC2Te' },
+        { nama: 'SITI HUMAIRA SAFIYA BINTI AMRAN', url: 'https://VJT5ys.short.gy/Vlk3hC' }
+      ],
+      '5 J': [
+        { nama: 'AMRISH DANISH BIN ROHAIZAD', url: 'https://VJT5ys.short.gy/fHP1SN' },
+        { nama: 'AQIL QAYYUM BIN MOHD YAZID', url: 'https://VJT5ys.short.gy/ZmAlYe' },
+        { nama: 'BHARHTH RAJ A/L ARUMUGAM', url: 'https://VJT5ys.short.gy/yzeKXF' },
+        { nama: 'DANISH HAIKAL BIN MUHAMMAD RIDZWAN', url: 'https://VJT5ys.short.gy/Vry8Np' },
+        { nama: 'KHARIL AZIZI A/L ASKARALI', url: 'https://VJT5ys.short.gy/jkWgtY' },
+        { nama: 'MOHAMAD NABIL BIN MOHD ASRI', url: 'https://VJT5ys.short.gy/VrNuYC' },
+        { nama: 'MUHAMMAD ADAM RIZKIN BIN ABDUL MUQADDIM', url: 'https://VJT5ys.short.gy/KgIhns' },
+        { nama: 'MUHAMMAD ADIEB THAQIEFF BIN ABDUL MALIK', url: 'https://VJT5ys.short.gy/iJQIVx' },
+        { nama: 'MUHAMMAD AFIQ HAKIMI BIN MOHD AZRAIKA BASTHOMI', url: 'https://VJT5ys.short.gy/DJMN13' },
+        { nama: 'MUHAMMAD ALIEF SHAH BIN ZULKIFLI', url: 'https://VJT5ys.short.gy/IrquRj' },
+        { nama: 'MUHAMMAD ALIF AIMAN BIN RAHSIDI', url: 'https://VJT5ys.short.gy/TPAqrX' },
+        { nama: 'MUHAMMAD AQIL BIN ABDUL GHANI', url: 'https://VJT5ys.short.gy/6LRmDe' },
+        { nama: 'MUHAMMAD AZIM BIN ABDULLAH', url: 'https://VJT5ys.short.gy/OoNmdl' },
+        { nama: 'MUHAMMAD HAIKAL BIN HAFIZAL AZMI', url: 'https://VJT5ys.short.gy/63ylUl' },
+        { nama: 'MUHAMMAD HAIKAL NAJMI BIN MD ISA', url: 'https://VJT5ys.short.gy/dc72gg' },
+        { nama: 'MUHAMMAD NAJMI DANIAL BIN MOHAMAD NASIR', url: 'https://VJT5ys.short.gy/KHdf0u' },
+        { nama: 'MUHAMMAD NUH AQIL BIN SHAIFUL ADNAN', url: 'https://VJT5ys.short.gy/bLemtF' },
+        { nama: 'MUHAMMAD SHAH HAIKAL BIN MOHD FAUZI', url: 'https://VJT5ys.short.gy/SSxTQ6' },
+        { nama: 'MUHAMMAD ZARILSHAWARUL FITRI BIN KAMARUZAMAN', url: 'https://VJT5ys.short.gy/qoaPoU' },
+        { nama: 'NAUFAL FAJAR MAULANA BIN ABDULLAH', url: 'https://VJT5ys.short.gy/weetqL' },
+        { nama: 'NIL WAFIY DARWISY BIN MOHD SHARIZAL', url: 'https://VJT5ys.short.gy/2QH50P' },
+        { nama: 'NUR ALISYA BINTI HARIZAN', url: 'https://VJT5ys.short.gy/MB8fyP' },
+        { nama: 'NUR BHAITIE ALEESYA BINTI KHAIRUDI', url: 'https://VJT5ys.short.gy/UGwxwn' },
+        { nama: 'NUR EZANI NAJWA BINTI ABDULLAH', url: 'https://VJT5ys.short.gy/65ViAn' },
+        { nama: 'NUR IMAN AZ-ZAHRA BINTI ABDULLAH', url: 'https://VJT5ys.short.gy/jseAG2' },
+        { nama: 'NUR SHAZLIYANA BATRISYIA BINTI ABDULLAH', url: 'https://VJT5ys.short.gy/a2OOZw' },
+        { nama: 'NURUL FARZANAH BINTI ZULKAFLI', url: 'https://VJT5ys.short.gy/YsXhdE' },
+        { nama: 'NURUL QISTINA MYSARA BINTI KU MOHD ZULIZY', url: 'https://VJT5ys.short.gy/9p0eVP' },
+        { nama: 'NURUL SHAHIRAH BINTI MOHD MAZLAN', url: 'https://VJT5ys.short.gy/dMags0' },
+        { nama: 'PUNITHA A/P LETCHUMANAN', url: 'https://VJT5ys.short.gy/5A3QzK' },
+        { nama: 'SAMITHRA A/P RAJANDERAN', url: 'https://VJT5ys.short.gy/k67GAO' }
+      ],
+      '5 I': [
+        { nama: 'AISYA HUMAIRA BINTI SHAHRUL NORKAMAL AZWA', url: 'https://VJT5ys.short.gy/wehpe4' },
+        { nama: 'AMIN QHUSAIRY BIN IBRAHIM', url: 'https://VJT5ys.short.gy/GxzWDX' },
+        { nama: 'ASMAANISA BINTI MOHD BASIRUDDIN', url: 'https://VJT5ys.short.gy/z5a6JJ' },
+        { nama: 'MITHANA KUMAR A/L RATHNA KUMAR', url: 'https://VJT5ys.short.gy/2eR00q' },
+        { nama: 'MOHD ARIEF HAIKAL BIN MOHD NADZRI', url: 'https://VJT5ys.short.gy/stJ9fV' },
+        { nama: 'MONALISA ROSANA BINTI ABDULLAH', url: 'https://VJT5ys.short.gy/Q4fziM' },
+        { nama: 'MUHAMMAD ADAM HAZIQ BIN MOHD EZAINI', url: 'https://VJT5ys.short.gy/jWHzEX' },
+        { nama: 'MUHAMMAD AIDIL BIN ABDUL HAMID', url: 'https://VJT5ys.short.gy/yhBlwf' },
+        { nama: 'MUHAMMAD AKIF IZWAN BIN MOHAMMAD AZAHAR', url: 'https://VJT5ys.short.gy/0yr8OR' },
+        { nama: 'MUHAMMAD DANIEL HAIKAL BIN MOHD JOHARI', url: 'https://VJT5ys.short.gy/IymLku' },
+        { nama: 'MUHAMMAD DZULFAQAR DZAKWAN BIN MOHAMAD SHAHRIL', url: 'https://VJT5ys.short.gy/a3bz1m' },
+        { nama: 'MUHAMMAD HAZIQ IRFAN BIN MOHD BUKHARI', url: 'https://VJT5ys.short.gy/JVvgBM' },
+        { nama: 'MUHAMMAD ISMA DANIAL BIN ISMANIZAM LUBIS', url: 'https://VJT5ys.short.gy/9dO3Vx' },
+        { nama: 'MUHAMMAD NUR HAIQAL BIN SUHAIRIN', url: 'https://VJT5ys.short.gy/P8NerB' },
+        { nama: 'MUHAMMAD RAIMI SYAZWAN BIN ABDUL MAJID', url: 'https://VJT5ys.short.gy/aFrgjJ' },
+        { nama: 'NADIATUL HUSNA BINTI ZULL', url: 'https://VJT5ys.short.gy/7YwXPl' },
+        { nama: 'NOR AIN FARISYA BINTI MOHD.FAIZAL', url: 'https://VJT5ys.short.gy/6dZdtB' },
+        { nama: 'NUR ALIYA BINTI MUSTAFA', url: 'https://VJT5ys.short.gy/IUOOq5' },
+        { nama: 'NUR BATRISYIA BINTI MUAHMAD HIRDIR', url: 'https://VJT5ys.short.gy/E5ZzgM' },
+        { nama: 'NUR DINI DALILI BINTI NASRI', url: 'https://VJT5ys.short.gy/uhavar' },
+        { nama: 'NUR ELIYANA ANISA BINTI SAFLI RIZUAN', url: 'https://VJT5ys.short.gy/9Ylt2Y' },
+        { nama: 'NUR HAFRIZAL BIN ABDULLAH', url: 'https://VJT5ys.short.gy/EE3GFw' },
+        { nama: 'NUR HUMAIRA DANIA BINTI SHUHAIRI', url: 'https://VJT5ys.short.gy/0CMKbn' },
+        { nama: 'PUTERI NABILA LIYANA BINTI MOHAMED KARIT', url: 'https://VJT5ys.short.gy/8f4Izp' },
+        { nama: 'RAJA KHAIRULNAIM BIN RAJA KAMALRULAZMAN', url: 'https://VJT5ys.short.gy/bB97lW' },
+        { nama: 'ZETY SAIDATUL ASMIDA BINTI ROZALI', url: 'https://VJT5ys.short.gy/4Ya0cX' }
+      ],
+      '5 H': [
+        { nama: 'ADIB QAYYUM BIN ALIAS', url: 'https://VJT5ys.short.gy/eBcxef' },
+        { nama: 'AHMAD HARITH BIN AZMI', url: 'https://VJT5ys.short.gy/1Tel1y' },
+        { nama: 'AHMAD RIDZWAN SHAH BIN AHMAD RAFNAN', url: 'https://VJT5ys.short.gy/Yk6czg' },
+        { nama: 'ASNIDA BINTI ABDUL HALIM', url: 'https://VJT5ys.short.gy/K5iVl9' },
+        { nama: 'HARRIZ AFIQ BIN ZAMRI ARIFIN', url: 'https://VJT5ys.short.gy/0wDaab' },
+        { nama: 'HAZIM BIN MOHAMED HASAN', url: 'https://VJT5ys.short.gy/VS9GMr' },
+        { nama: 'JAZFARREL IQRAM BIN JAZZMAN FAIZZAL', url: 'https://VJT5ys.short.gy/XBwf6W' },
+        { nama: 'MASTER MUHAMMADFIRDAUS SOHATEH', url: 'https://VJT5ys.short.gy/nh2hHx' },
+        { nama: 'MOHAMMAD AQIL HAQIMI BIN MOHD FAIZAL', url: 'https://VJT5ys.short.gy/xs14iQ' },
+        { nama: 'MUHAMAD AFIQ RAHIMI BIN ABDULLAH', url: 'https://VJT5ys.short.gy/wR5lxU' },
+        { nama: 'MUHAMMAD ABDUL HAFIDZ BIN ABDUL RAHMAN', url: 'https://VJT5ys.short.gy/cZcvl3' },
+        { nama: 'MUHAMMAD ABDUL RAZAK BIN NORHISHAM', url: 'https://VJT5ys.short.gy/nmJTsI' },
+        { nama: 'MUHAMMAD AMIR ASYRAAF BIN ABDUL HAFIZ HAKAM', url: 'https://VJT5ys.short.gy/NesdiY' },
+        { nama: 'MUHAMMAD AQIL DANIAL BIN MOHD FARHAM', url: 'https://VJT5ys.short.gy/lVm7ME' },
+        { nama: 'MUHAMMAD AWAL RAMADHAN BIN MAZUARI', url: 'https://VJT5ys.short.gy/4NlZRA' },
+        { nama: 'MUHAMMAD DANIAL ZAKWAN BIN MOHD ZAKI', url: 'https://VJT5ys.short.gy/I86JyT' },
+        { nama: 'MUHAMMAD FAISAL HIQBAL BIN MOHD ASRI', url: 'https://VJT5ys.short.gy/qduu3X' },
+        { nama: 'MUHAMMAD HAFIZ SHAZWAN BIN HEROL NORHIZAM', url: 'https://VJT5ys.short.gy/WMt2yl' },
+        { nama: 'MUHAMMAD HARRAZ ZULHAKIM BIN ANDRYOS', url: 'https://VJT5ys.short.gy/vUPUjO' },
+        { nama: 'MUHAMMAD HAYKAL BIN MUSAHIMI', url: 'https://VJT5ys.short.gy/Rp6JzY' },
+        { nama: 'MUHAMMAD HAZIM BIN SUWARI', url: 'https://VJT5ys.short.gy/HvoAPJ' },
+        { nama: 'MUHAMMAD IQBAL BIN MOHD AZHAR', url: 'https://VJT5ys.short.gy/ujSA59' },
+        { nama: 'MUHAMMAD IQRAM DANISH BIN JAMALUDIN', url: 'https://VJT5ys.short.gy/Tzb7tj' },
+        { nama: "MUHAMMAD KASYFI MU'IZ BIN MOHAMAD KHAIRUL AZUAN", url: 'https://VJT5ys.short.gy/oq9TjN' },
+        { nama: 'MUHAMMAD NUR RIDHWAN HAFIZ BIN SAZALI', url: 'https://VJT5ys.short.gy/y6IUbN' },
+        { nama: 'MUHAMMAD SYAFIQ BIN FARIZAL', url: 'https://VJT5ys.short.gy/0id8FE' },
+        { nama: 'MUHAMMAD UMMAR DANISH BIN MOHD IZZUDIN', url: 'https://VJT5ys.short.gy/W5jfNv' },
+        { nama: 'MUHAMMAD ZAFYR BIN MOHD ZAMZURI', url: 'https://VJT5ys.short.gy/wD8ZXa' },
+        { nama: 'NORKHAIRUNNISA BINTI AZIZUL ANUAR', url: 'https://VJT5ys.short.gy/bBntmh' },
+        { nama: 'NUR ALEESYA BINTI HISHAMUDIN', url: 'https://VJT5ys.short.gy/HIQrGV' },
+        { nama: 'NUR FARAH ALESYA BINTI MUHAMAD BADRORIZAL', url: 'https://VJT5ys.short.gy/wAEL22' },
+        { nama: 'NUR FATIN MARDHIAH BINTIMOHD.SABRI', url: 'https://VJT5ys.short.gy/JkbSvS' },
+        { nama: 'NUR HAFRIZUL SHAH BIN ABDULLAH', url: 'https://VJT5ys.short.gy/m9Mmce' },
+        { nama: 'NUR HUSNINA IRDINA BINTI MUHAMAD FAIZAL', url: 'https://VJT5ys.short.gy/d1qIq9' },
+        { nama: 'NUR SYAKILA IZZATY BINTI SUHAIMI', url: 'https://VJT5ys.short.gy/2dM03x' },
+        { nama: 'NURUL SHUHADA BINTI MD AZHAR', url: 'https://VJT5ys.short.gy/Bo4a4k' },
+        { nama: 'PUTRA HARRIS DANISH BIN ZAINUL AKMAL', url: 'https://VJT5ys.short.gy/vSCcW6' },
+        { nama: 'PUTRI ALYA ADRIANA BINTI MUHAMMAD FAIZAL', url: 'https://VJT5ys.short.gy/sq0tVL' }
+      ],
+      '5 G': [
+        { nama: 'AKIF MUKHRIZ BIN KHAIRI', url: 'https://VJT5ys.short.gy/eyVgPs' },
+        { nama: 'ALEESYA HUMAIRA BINTI MUHAMMAD SYAWAL', url: 'https://VJT5ys.short.gy/ISeWdH' },
+        { nama: 'ALIF QUSYAIRI BIN MOHD ASRI', url: 'https://VJT5ys.short.gy/9wRaei' },
+        { nama: 'AMMAR RIZQI BIN SUHAIDI', url: 'https://VJT5ys.short.gy/nqbrHB' },
+        { nama: 'ARISSA MAISARAH BINTI HAZMAN', url: 'https://VJT5ys.short.gy/dwP3pA' },
+        { nama: 'HAMIZAH MAISARAH BINTI HAIRI', url: 'https://VJT5ys.short.gy/jsXUZR' },
+        { nama: "I'QAL AQIMI BIN IZAHAM", url: 'https://VJT5ys.short.gy/aLrBNn' },
+        { nama: 'ISKANDAR ZULKARNAIN BIN BUDY DHARMAWAN', url: 'https://VJT5ys.short.gy/p2K6oD' },
+        { nama: 'LUQMAN NUR HAQIM BIN HAZLAN', url: 'https://VJT5ys.short.gy/vozpbe' },
+        { nama: 'MAS ADIE ZAFUAN BIN MAS SAZMY', url: 'https://VJT5ys.short.gy/XX3F99' },
+        { nama: 'MOHAMAD ZULKIFLI BIN IBRAHIM', url: 'https://VJT5ys.short.gy/0TtxFq' },
+        { nama: 'MUHAMAD ARIFFIN BIN RAHIMI', url: 'https://VJT5ys.short.gy/f2fKph' },
+        { nama: 'MUHAMAD HAFIZUDDIN BIN RAMLY', url: 'https://VJT5ys.short.gy/NLmsNT' },
+        { nama: 'MUHAMMAD ADAM ALIF BIN ABDULLAH', url: 'https://VJT5ys.short.gy/Nd9w0h' },
+        { nama: 'MUHAMMAD ALIF HAKIMI BIN AZIZI', url: 'https://VJT5ys.short.gy/OoNP3I' },
+        { nama: 'MUHAMMAD ASYRAAF BIN ROSLI', url: 'https://VJT5ys.short.gy/kPBVQ8' },
+        { nama: 'MUHAMMAD FARIS BIN ROSLEY', url: 'https://VJT5ys.short.gy/T1Z3ra' },
+        { nama: 'MUHAMMAD FITRI MUHSININ BIN AZIZAN', url: 'https://VJT5ys.short.gy/mt6oYD' },
+        { nama: 'MUHAMMAD HAQIMI BIN RAZIS', url: 'https://VJT5ys.short.gy/u6O9xw' },
+        { nama: 'MUHAMMAD HAZIQ BIN RAZALI', url: 'https://VJT5ys.short.gy/4vkFEc' },
+        { nama: 'MUHAMMAD IQBAL HAKIMI BIN HISYAM', url: 'https://VJT5ys.short.gy/Qkkb8C' },
+        { nama: 'MUHAMMAD IRFAAN BIN ASOOR', url: 'https://VJT5ys.short.gy/K0Xa76' },
+        { nama: 'MUHAMMAD QAYYUM RAYYAN BIN IDRIS', url: 'https://VJT5ys.short.gy/sMI3tJ' },
+        { nama: 'MUHAMMAD RAYYAN DANIES BIN ROZMAN', url: 'https://VJT5ys.short.gy/hfMMVg' },
+        { nama: 'MUHAMMAD SYAWAL HAIKAL BIN MOHD ADNAN', url: 'https://VJT5ys.short.gy/JqJHJo' },
+        { nama: 'MUHAMMAD ZAHIRUL ZAFRAN BIN ABDUL RAHIM', url: 'https://VJT5ys.short.gy/8jpspo' },
+        { nama: 'NUL DANNY NATASHA BINTI IZHAR', url: 'https://VJT5ys.short.gy/FX2Sva' },
+        { nama: 'NUR FAIZATUL HUSNA BINTI ABDUL RAHMAN', url: 'https://VJT5ys.short.gy/qF5qM2' },
+        { nama: 'NUR FASZRINATASYA BINTI JUHARMAN', url: 'https://VJT5ys.short.gy/LQaMRf' },
+        { nama: 'NUR HASYA DALILA BINTI ROSLAN', url: 'https://VJT5ys.short.gy/txAsiN' },
+        { nama: 'NURUL EMAN ALEYA BINTI ABDUL KUDUS', url: 'https://VJT5ys.short.gy/C9Ny8Q' },
+        { nama: 'NURAINA NAJWA BINTI ABDULLAH', url: 'https://VJT5ys.short.gy/980dmN' },
+        { nama: "PUTRI NUR'BALQIS BINTI ZAINAL", url: 'https://VJT5ys.short.gy/VDrk9S' },
+        { nama: 'RAFIQ BIN RAZIF', url: 'https://VJT5ys.short.gy/06usbS' },
+        { nama: 'WAN ADAM HARIS BIN WAN MOHD FADZLI', url: 'https://VJT5ys.short.gy/VcK2EP' },
+        { nama: 'WAN NUR QISTINA MUSFIRAH BINTI WAN MOHD MUZRI', url: 'https://VJT5ys.short.gy/2jfMIx' }
+      ],
+      '5 D': [
+        { nama: 'DANIA DANISSHA BINTI MOHD MAZLAN', url: 'https://VJT5ys.short.gy/xdSkkE' },
+        { nama: 'FATEMA DAMIA BINTI MOHAMAD HASNOR', url: 'https://VJT5ys.short.gy/MOku2T' },
+        { nama: 'HIDAYAH QISTINA BINTI ABDUL MANAF', url: 'https://VJT5ys.short.gy/SVOxNz' },
+        { nama: 'ISABELLA MELISSA BINTI ZAMSARI', url: 'https://VJT5ys.short.gy/hU2Jzu' },
+        { nama: 'LISA SURIHANI BINTI MOHD NAZROL HISHAM', url: 'https://VJT5ys.short.gy/YSYuWB' },
+        { nama: 'NOR BALQIS HAYANI BINTI RAMLE', url: 'https://VJT5ys.short.gy/7e5zPp' },
+        { nama: 'NUR ADRIANA MAISARAH BINTI KAMARUL AZMAN', url: 'https://VJT5ys.short.gy/4DTWJh' },
+        { nama: 'NUR ALEESYA ARIANA BINTI MOHD SHAHRUL NAZRIN', url: 'https://VJT5ys.short.gy/NJoVDW' },
+        { nama: 'NUR ALIA FARIZA BINTI ADUL KARIYA', url: 'https://VJT5ys.short.gy/rOafoE' },
+        { nama: 'NUR DARWISYAH BATRISYIA BINTI MD AL FIZAN', url: 'https://VJT5ys.short.gy/aFauKC' },
+        { nama: 'NUR DELIMA QALESYA BINTI JEFRY SUARDI', url: 'https://VJT5ys.short.gy/5zX6HG' },
+        { nama: 'NUR FAIZATUL HUMAIRA BINTI ABDUL RAHMAN', url: 'https://VJT5ys.short.gy/bV6epm' },
+        { nama: 'NUR HUMAYRAA DAMIA BINTI HISHAM', url: 'https://VJT5ys.short.gy/vUXvUr' },
+        { nama: 'NUR QASEH BINTI ZULBAKHRIM', url: 'https://VJT5ys.short.gy/W1dYs7' },
+        { nama: 'NUR SALIKIN MAISARAH BINTI RANO KARNO', url: 'https://VJT5ys.short.gy/sJaZPo' },
+        { nama: 'NUR SYUHADA SOFEA BINTI MAHAMAD REZAL', url: 'https://VJT5ys.short.gy/FYbMT9' },
+        { nama: 'NURSYAZA HUSNA BINTI MUHAMMAD RIZAL', url: 'https://VJT5ys.short.gy/XDa6Vm' },
+        { nama: 'NURUL AIDA BINTI SUHAILI', url: 'https://VJT5ys.short.gy/oBPGck' },
+        { nama: 'NURUL AMYLIA NAJWA BINTI MOHD ROSLAN', url: 'https://VJT5ys.short.gy/fQSUwP' },
+        { nama: 'NURUL ATHIQAH BINTI AHMAD', url: 'https://VJT5ys.short.gy/4HqCvZ' },
+        { nama: 'NURUL ATHIRAH BINTI SAMSOL HISAM', url: 'https://VJT5ys.short.gy/T9PQxp' },
+        { nama: 'NURUL IMAN ALLESYA BINTI MOHD AZMI', url: 'https://VJT5ys.short.gy/SHQxkF' },
+        { nama: 'PUTRI ELYSHA AIREEN BINTI SHAHRYMAN SHAHRIL', url: 'https://VJT5ys.short.gy/gPh9fy' },
+        { nama: 'SITI NURDINI ZULAIKHA BINTI MOHD AZMEE', url: 'https://VJT5ys.short.gy/jEmeBP' }
+      ],
+      '5 C': [
+        { nama: 'ADEEB SYAMIL BIN ANIZAM', url: 'https://VJT5ys.short.gy/JkSkYS' },
+        { nama: 'AHMAD NAJMI IRFAN BIN AHMAD FAIZ', url: 'https://VJT5ys.short.gy/oFYlx9' },
+        { nama: 'AMIR DANISH BIN AHMAD SAFAR', url: 'https://VJT5ys.short.gy/smj6l4' },
+        { nama: 'ARIF BIN MOHD EZZAR', url: 'https://VJT5ys.short.gy/nSTyM5' },
+        { nama: 'FARIS AZWAR BIN ANUAR', url: 'https://VJT5ys.short.gy/FewLuN' },
+        { nama: 'HAIKAL BIN ARSYAD', url: 'https://VJT5ys.short.gy/QsinS9' },
+        { nama: 'MAS PUTRA ZAQUAN BIN MAS SAZMY', url: 'https://VJT5ys.short.gy/kNd8yM' },
+        { nama: 'MAS SYAZWINA BINTI MAS SAZNY', url: 'https://VJT5ys.short.gy/OcYIrB' },
+        { nama: 'MOHAMAD THAQIF ADHA BIN FARIZUL HAIZAM', url: 'https://VJT5ys.short.gy/MixbRc' },
+        { nama: 'MUHAMAD AQIEL MUHAZIQ BIN MUHAMAD', url: 'https://VJT5ys.short.gy/gnTeSi' },
+        { nama: 'MUHAMAD FAQROL HAZEEQ BIN MOHD FAUZIE', url: 'https://VJT5ys.short.gy/Gmu1dG' },
+        { nama: 'MUHAMAD SAFRIL HAZIM BIN KAMARUDDIN', url: 'https://VJT5ys.short.gy/k9buvh' },
+        { nama: 'MUHAMMAD ADAM FADHULLAH BIN KHAIRUN', url: 'https://VJT5ys.short.gy/6z1kI4' },
+        { nama: 'MUHAMMAD ADAM HAREIZ BIN MOHD YUSOF', url: 'https://VJT5ys.short.gy/s3e1n7' },
+        { nama: 'MUHAMMAD ALIFF DANIAL BIN MUSMULIAYDI', url: 'https://VJT5ys.short.gy/GNAnqF' },
+        { nama: 'MUHAMMAD HAIKAL BIN ABDUL LATIF', url: 'https://VJT5ys.short.gy/3UT3Nm' },
+        { nama: 'MUHAMMAD IZZAT BIN ZAMSARI', url: 'https://VJT5ys.short.gy/Ug1Iu1' },
+        { nama: 'MUHAMMAD KHALIF DARWISY BIN MOHD SHAZLY', url: 'https://VJT5ys.short.gy/zhqE51' },
+        { nama: 'MUHAMMAD RAFI BIN RAZALI', url: 'https://VJT5ys.short.gy/TShH8Q' },
+        { nama: 'MUHAMMAD WAFIY MUHAIMIN BIN ZAKARIA', url: 'https://VJT5ys.short.gy/zngvWs' },
+        { nama: 'NAMI IMANI BINTI AHMAD ZAINI', url: 'https://VJT5ys.short.gy/kmMW3o' },
+        { nama: 'NIK NUR DAMIA ALEESYA BINTI KAMARUZAMAN', url: 'https://VJT5ys.short.gy/hZtGsj' },
+        { nama: 'NOR AQILLIA BINTI NAZRUL SHAM', url: 'https://VJT5ys.short.gy/5z3IkX' },
+        { nama: 'NUR ADRIANA SYAQALEESYA BINTI AHMAD', url: 'https://VJT5ys.short.gy/SsI3gW' },
+        { nama: 'NUR AISYAH ZAFIERA BINTI JEFPRI', url: 'https://VJT5ys.short.gy/OY4d7d' },
+        { nama: 'NUR ALIYA DANISYA BINTI HANIZAN', url: 'https://VJT5ys.short.gy/D4Hki9' },
+        { nama: 'NUR AMIRA BINTI MD SHAZLIN AMIR', url: 'https://VJT5ys.short.gy/85ApjR' },
+        { nama: 'NUR FARISHA ALEEYA BINTI FAZLI', url: 'https://VJT5ys.short.gy/xuHsOo' },
+        { nama: 'NUR FITRIAH ELLISYA BINTI KHAIRUL AMIN', url: 'https://VJT5ys.short.gy/I0cZmn' },
+        { nama: 'NURIN AQILAH QASHIRINA BINTI JASLI', url: 'https://VJT5ys.short.gy/pZlBW8' },
+        { nama: 'NURSYAFIQAH NADHIRAH BINTI ABDUL RAHIM', url: 'https://VJT5ys.short.gy/0LiSMv' },
+        { nama: 'NURUL RASYIQAH BINTI ABDULLAH', url: 'https://VJT5ys.short.gy/RaqPp2' },
+        { nama: 'PUTERI INTAN LIYANA BINTI MOHD NOR', url: 'https://VJT5ys.short.gy/BboVYq' },
+        { nama: 'QASEH NURQISTINA BINTI JAMALUDIN', url: 'https://VJT5ys.short.gy/4ZGxun' },
+        { nama: 'QISTINA ALESYA BINTI KAMARUZZAMAN', url: 'https://VJT5ys.short.gy/yXUbAn' },
+        { nama: 'SYED DANIEL BIN SYED KHAIRUDDIN', url: 'https://VJT5ys.short.gy/jc2gIN' },
+        { nama: "U'LYA ADIBAH BINTI AZADEE", url: 'https://VJT5ys.short.gy/QvR2T8' }
+      ],
+      '5 B': [
+        { nama: 'AFIQ AIMAN BIN SHAMSATUL FASAL', url: 'https://VJT5ys.short.gy/hsWq5a' },
+        { nama: 'ATHIRAH ATIKAH BINTI ROSLI', url: 'https://VJT5ys.short.gy/jDIrLv' },
+        { nama: 'ELLYANA ZAHRA BINTI MOHD FARID', url: 'https://VJT5ys.short.gy/2j6p3r' },
+        { nama: 'FAKHRI RAZIQ BIN MOHD RADI', url: 'https://VJT5ys.short.gy/wLWH4G' },
+        { nama: 'HARIESYA MAISARA BINTI MOHAMAD HAZWAN', url: 'https://VJT5ys.short.gy/HA029Y' },
+        { nama: 'ISHA UMAIZA BINTI NORAZLAN', url: 'https://VJT5ys.short.gy/Gf3Tgh' },
+        { nama: 'KHAIRUL HAZIEQ BIN KHAIRUL FAIZAL', url: 'https://VJT5ys.short.gy/0TCQj0' },
+        { nama: 'MASTURRAH QAISARAH BINTI MUHAMMAD MASRRI', url: 'https://VJT5ys.short.gy/OY8C7h' },
+        { nama: 'MUHAMAD AKIFF BIN MASRULNIZAM', url: 'https://VJT5ys.short.gy/VbHkGI' },
+        { nama: 'MUHAMAD RAIYAN DHANI BIN MOHD RIDZUAN', url: 'https://VJT5ys.short.gy/qRvChK' },
+        { nama: 'MUHAMMAD ADIB FARHAD BIN MOHD FAIZAL', url: 'https://VJT5ys.short.gy/v1FVXD' },
+        { nama: 'MUHAMMAD AMIRUL NAIM BIN MOHD AZLAN', url: 'https://VJT5ys.short.gy/t1dpVo' },
+        { nama: 'MUHAMMAD ASWAD BIN ROZLAN', url: 'https://VJT5ys.short.gy/1Iadqn' },
+        { nama: 'MUHAMMAD SYAFIQ HAIKAL BIN SARIPUDIN', url: 'https://VJT5ys.short.gy/xHIgdS' },
+        { nama: 'MUHAMMAD SYUIB BIN ABDULLAH', url: 'https://VJT5ys.short.gy/HztJsL' },
+        { nama: 'MUHAMMAD ZIYAD RIZKY BIN MOHD RAIHAN', url: 'https://VJT5ys.short.gy/W0FwAx' },
+        { nama: 'NAYLI ZAWANAH BINTI ZULKEFLI', url: 'https://VJT5ys.short.gy/nz2Hgq' },
+        { nama: 'NOOR NABILAH BINTI AHMAD', url: 'https://VJT5ys.short.gy/GCrtPq' },
+        { nama: 'NUR ARISSA NAJWA BINTI MOHD RIZAL', url: 'https://VJT5ys.short.gy/8ptlpF' },
+        { nama: 'NUR DAYANA ARISSYA BINTI SHAHRONNIZAM', url: 'https://VJT5ys.short.gy/am1X7b' },
+        { nama: 'NUR ERYNA ELYSYA BINTI MOHD SYAMRI', url: 'https://VJT5ys.short.gy/lVdmlm' },
+        { nama: 'NUR FARISYA ADRIANA BINTI MAD UJANG', url: 'https://VJT5ys.short.gy/N8X2VF' },
+        { nama: 'NUR FATIN ATHIRAH BINTI NOFAIZAL', url: 'https://VJT5ys.short.gy/LqZDPe' },
+        { nama: 'NUR HAZIRAH BINTI HASNOL', url: 'https://VJT5ys.short.gy/5VbP51' },
+        { nama: 'NUR SYAHIRA MYSARA BINTI ABDULLAH', url: 'https://VJT5ys.short.gy/dgh0CX' },
+        { nama: 'NURALIAH UMAIRAH BINTI MOHD KHIRIL', url: 'https://VJT5ys.short.gy/Yclnnl' },
+        { nama: 'NURIN DANISH BIN HAFIZUL NURUL', url: 'https://VJT5ys.short.gy/26R1BO' },
+        { nama: 'NURMARDHIYAH BINTI MOHAMED ROSLI', url: 'https://VJT5ys.short.gy/Y6PruJ' },
+        { nama: 'PUTERI IFTI LIYANA BINTI MOHD JAMIL', url: 'https://VJT5ys.short.gy/ZMj81A' },
+        { nama: 'QASEH NUR ALIA BINTI HUZAINEY', url: 'https://VJT5ys.short.gy/lesyR8' },
+        { nama: 'SITI HAJAR NAJWA BINTI ZAINAL FADZIL', url: 'https://VJT5ys.short.gy/2HPHvP' },
+        { nama: 'TAUFIQ ISKANDAR MOHAMMAD FIRDAUS BIN ABDULLAH', url: 'https://VJT5ys.short.gy/9kJhtL' }
+      ],
+      '5 A': [
+        { nama: 'ABDUL AZIM BIN ZULKIFLI', url: 'https://VJT5ys.short.gy/Ilby1k' },
+        { nama: 'AHMAD NAUFAL BIN MOHD AIDIL', url: 'https://VJT5ys.short.gy/3NfnIO' },
+        { nama: 'ALIF IRFAN BIN KHARUL ANUAR', url: 'https://VJT5ys.short.gy/WJ6g2E' },
+        { nama: 'ARINA HADIRAH BINTI AHMAD YAZID', url: 'https://VJT5ys.short.gy/ESAGdc' },
+        { nama: 'HAZIQ AKHMAL ADHA BIN AZIZUL', url: 'https://VJT5ys.short.gy/VA5JFm' },
+        { nama: 'IMTIYAZ FAHMY BIN SYAIFUL RIZAL', url: 'https://VJT5ys.short.gy/07lHup' },
+        { nama: 'MOHAMAD FIRDAUS BIN ABDUL RAOFF', url: 'https://VJT5ys.short.gy/Da3ZCT' },
+        { nama: 'MUHAMMAD ALIF NAJMI BIN AZIZI', url: 'https://VJT5ys.short.gy/QAqoPy' },
+        { nama: 'MUHAMMAD AQIL ASYRAAF BIN MOHAMAD SAUFI', url: 'https://VJT5ys.short.gy/yIEB5P' },
+        { nama: 'MUHAMMAD FARHAN BIN SHAMSUL', url: 'https://VJT5ys.short.gy/b8DWP7' },
+        { nama: 'MUHAMMAD FARISH DANIEL BIN MOHD FADZIL', url: 'https://VJT5ys.short.gy/UVoLp8' },
+        { nama: 'MUHAMMAD HAFIY HAMIMI BIN MUHAMMAD ZAFFROL', url: 'https://VJT5ys.short.gy/PjGNvL' },
+        { nama: 'MUHAMMAD IMAN HAIKAL BIN MOHAMAD ROHIMI', url: 'https://VJT5ys.short.gy/Jibm4n' },
+        { nama: 'MUHAMMAD IZZUL ISLAM BIN MUHAMAD HAFIZ', url: 'https://VJT5ys.short.gy/lbgJJT' },
+        { nama: 'NAQEB NAZHAN BIN MOHD NAZRI', url: 'https://VJT5ys.short.gy/s5k7ta' },
+        { nama: 'NOR FATIHAH INSYIRAH BINTI AMRUDIN', url: 'https://VJT5ys.short.gy/FV5e9G' },
+        { nama: 'NUR ADANIA QASEH BINTI MOHD ZAHID', url: 'https://VJT5ys.short.gy/tUl2a0' },
+        { nama: 'NUR ADLINA QALEESYA BINTI MOHD RIZAL', url: 'https://VJT5ys.short.gy/WlaccQ' },
+        { nama: 'NUR AMALIYA QASHRINA BINTI MUHAMMAD RIZAL', url: 'https://VJT5ys.short.gy/GMqO6x' },
+        { nama: 'NUR RAUDHATUL SYAHIRAH BINTI MOHD SHAHRILL', url: 'https://VJT5ys.short.gy/D8j8E4' },
+        { nama: 'NURFATIHAH FAZIA BINTI MUHAMMAD FIRDAUS', url: 'https://VJT5ys.short.gy/QSrsUn' },
+        { nama: 'NURRO FIKAH BINTI JAMALUDDIN', url: 'https://VJT5ys.short.gy/0t13q0' },
+        { nama: 'NURULJANNAH BINTI MOHD HARAMAIEN', url: 'https://VJT5ys.short.gy/QkFuVB' },
+        { nama: 'SAFARINA HASMOTALIB BINTI ABDUL RAHMAN', url: 'https://VJT5ys.short.gy/xzS4SX' },
+        { nama: 'SHAFIRUL IZZAT BIN SHAIFUL ZAMRI', url: 'https://VJT5ys.short.gy/gN0Iox' },
+        { nama: 'SITI AFIQAH BINTI ZULKIFLI', url: 'https://VJT5ys.short.gy/yom4NX' },
+        { nama: "SUFFIA HANNIM BINTI ABDUL RAAFI'", url: 'https://VJT5ys.short.gy/3fDAHa' },
+        { nama: 'TENGKU HANAN ZULAIKHA BINTI TENGKU BAHROL AMAN', url: 'https://VJT5ys.short.gy/LuIlvY' },
+        { nama: 'WAN IMAN DANIAL BIN WAN FAIZAL', url: 'https://VJT5ys.short.gy/kEmFAi' }
+      ]
+    };
+
+    let dataPenuh = [];
+    let masterMurid = [];
+    let chartStatus;
+    let chartKelas;
+    let sortKey = 'Nama';
+    let sortDir = 1;
+
+    const kelasValueLabelPlugin = {
+      id: 'kelasValueLabelPlugin',
+      afterDatasetsDraw(chart) {
+        if (chart.config.type !== 'bar') return;
+        const meta = chart.getDatasetMeta(0);
+        const data = chart.data.datasets[0]?.data || [];
+        const { ctx } = chart;
+
+        ctx.save();
+        ctx.font = '700 12px "Plus Jakarta Sans", sans-serif';
+        ctx.fillStyle = '#e8fff7';
+        ctx.textAlign = 'center';
+        ctx.shadowColor = 'rgba(55, 255, 181, 0.6)';
+        ctx.shadowBlur = 7;
+
+        meta.data.forEach((bar, i) => {
+          const val = Number(data[i] || 0);
+          ctx.fillText(`${Math.round(val)}%`, bar.x, bar.y - 8);
+        });
+
+        ctx.restore();
+      }
+    };
+
+    const el = {
+      masaKini: document.getElementById('masaKini'),
+      statusNetwork: document.getElementById('statusNetwork'),
+      cariNama: document.getElementById('cariNama'),
+      filterTarikh: document.getElementById('filterTarikh'),
+      filterKelas: document.getElementById('filterKelas'),
+      btnRefresh: document.getElementById('btnRefresh'),
+      metaData: document.getElementById('metaData'),
+      rowCount: document.getElementById('rowCount'),
+      tableBody: document.getElementById('tableBody'),
+      toastWrap: document.getElementById('toastWrap'),
+      btnPdf: document.getElementById('btnPdf'),
+      btnPrint: document.getElementById('btnPrint'),
+      btnToggleManual: document.getElementById('btnToggleManual'),
+      manualSection: document.getElementById('manualSection'),
+      manualNama: document.getElementById('manualNama'),
+      manualKelas: document.getElementById('manualKelas'),
+      btnCancelManual: document.getElementById('btnCancelManual'),
+      manualQuickLinks: document.getElementById('manualQuickLinks'),
+      manualQuickLinksList: document.getElementById('manualQuickLinksList')
+    };
+
+    function pad2(n) { return String(n).padStart(2, '0'); }
+    function hariIniIso() {
+      const d = new Date();
+      return `${d.getFullYear()}-${pad2(d.getMonth()+1)}-${pad2(d.getDate())}`;
+    }
+
+    function formatTarikhApi(isoDate) {
+      const m = String(isoDate || '').match(/^(\d{4})-(\d{2})-(\d{2})$/);
+      return m ? `${m[3]}/${m[2]}/${m[1]}` : '';
+    }
+
+    function bukaInputManual() {
+      if (!sahkanAksesInputManual()) return;
+      el.manualSection.classList.remove('hidden');
+      isiPilihanKelasManual(el.filterKelas.value || '');
+      el.manualNama.value = '';
+      el.manualKelas.focus();
+    }
+
+    function tutupInputManual() {
+      el.manualSection.classList.add('hidden');
+    }
+
+    function aksesInputManualDibenarkan() {
+      return sessionStorage.getItem(MANUAL_UNLOCK_KEY) === '1';
+    }
+
+    function sahkanAksesInputManual() {
+      if (aksesInputManualDibenarkan()) return true;
+
+      const input = window.prompt('Masukkan kata laluan untuk buka Input Manual:');
+      if (input === null) return false;
+
+      if (input === GURU_PASSWORD) {
+        sessionStorage.setItem(MANUAL_UNLOCK_KEY, '1');
+        toast('Akses input manual dibenarkan.', 'ok');
+        return true;
+      }
+
+      toast('Kata laluan tidak tepat.', 'warn');
+      return false;
+    }
+
+    function formatMasaKini() {
+      const now = new Date();
+      const text = now.toLocaleString('ms-MY', {
+        weekday: 'long', day: '2-digit', month: 'long', year: 'numeric',
+        hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: true
+      });
+      el.masaKini.textContent = text;
+    }
+
+    function bukaPemilihTarikh() {
+      const input = el.filterTarikh;
+      if (!input) return;
+      if (typeof input.showPicker === 'function') {
+        try {
+          input.showPicker();
+          return;
+        } catch (_) {}
+      }
+      input.focus();
+    }
+
+    function setNetworkUI(online) {
+      const icon = el.statusNetwork.querySelector('.material-symbols-outlined');
+      const label = el.statusNetwork.querySelector('span:last-child');
+      el.statusNetwork.classList.toggle('online', online);
+      el.statusNetwork.classList.toggle('offline', !online);
+      icon.textContent = online ? 'wifi' : 'wifi_off';
+      label.textContent = online ? 'Online' : 'Offline';
+    }
+
+    function toast(msg, kind = 'ok') {
+      const t = document.createElement('div');
+      t.className = `toast ${kind}`;
+      t.textContent = msg;
+      el.toastWrap.appendChild(t);
+      requestAnimationFrame(() => t.classList.add('show'));
+      setTimeout(() => {
+        t.classList.remove('show');
+        setTimeout(() => t.remove(), 240);
+      }, 2200);
+    }
+
+    function setDebugInfo() {}
+
+    function bacaMedan(item, candidates = []) {
+      for (const key of candidates) {
+        if (item[key] !== undefined && item[key] !== null && String(item[key]).trim() !== '') {
+          return String(item[key]).trim();
+        }
+      }
+
+      const lowerCandidates = candidates.map(k => String(k).toLowerCase());
+      for (const [key, value] of Object.entries(item || {})) {
+        const normalizedKey = String(key).trim().toLowerCase();
+        if (lowerCandidates.includes(normalizedKey) && value !== undefined && value !== null && String(value).trim() !== '') {
+          return String(value).trim();
+        }
+      }
+
+      return '';
+    }
+
+    function bacaStatusMentah(item) {
+      return bacaMedan(item, [
+        'Status',
+        'status',
+        'Kehadiran',
+        'kehadiran',
+        'Status Kehadiran',
+        'status kehadiran',
+        'Kehadiran Murid',
+        'kehadiran murid'
+      ]);
+    }
+
+    function normalStatus(val) {
+      const s = String(val || '').trim().toLowerCase();
+      if (!s) return 'Hadir';
+      if (s === 'h' || s === 'hadir' || s === 'present' || s === '1' || s === 'true' || s === 'ya') return 'Hadir';
+      if (s === 'th' || s === 'tidak hadir' || s === 'absen' || s === 'ponteng' || s === 'x hadir' || s === '0' || s === 'false') return 'Tidak Hadir';
+      if (/(^|[^a-z])hadir([^a-z]|$)/.test(s) || s.includes('present')) return 'Hadir';
+      if (s.includes('tidak hadir') || s.includes('x hadir') || s.includes('absen') || s.includes('ponteng')) return 'Tidak Hadir';
+      return 'Hadir';
+    }
+
+    function adaImbasanKad(rows) {
+      return rows.some(item => {
+        const s = bacaStatusMentah(item).toLowerCase().trim();
+        if (!s) return false;
+        return normalStatus(s) === 'Hadir';
+      });
+    }
+
+    function normalKelasLabel(value) {
+      const text = String(value || '').trim().replace(/\s+/g, ' ');
+      if (!text) return '';
+      const ringkas = text.match(/^(\d)\s*([a-z])$/i);
+      if (ringkas) return `${ringkas[1]} ${ringkas[2].toUpperCase()}`;
+      const penuh = text.match(/^(\d)\s+([a-z])$/i);
+      if (penuh) return `${penuh[1]} ${penuh[2].toUpperCase()}`;
+      return text.toUpperCase() === text ? text : text.replace(/\b([a-z])/g, s => s.toUpperCase());
+    }
+
+    function bacaKelas(item) {
+      return normalKelasLabel(bacaMedan(item, ['Kelas', 'kelas', 'Nama_Kelas', 'Nama Kelas'])) || 'Tiada Kelas';
+    }
+
+    function bacaNama(item) {
+      return bacaMedan(item, ['Nama', 'nama', 'Nama Murid']);
+    }
+
+    function bacaTarikh(item) {
+      const raw = bacaMedan(item, ['Tarikh', 'tarikh', 'Tarikh Kehadiran', 'tarikh kehadiran']);
+      if (!raw) return '';
+      return normalTarikh(raw);
+    }
+
+    function normalTarikh(raw) {
+      const text = String(raw || '').trim();
+      if (!text) return '';
+
+      const iso = text.match(/^(\d{4})-(\d{1,2})-(\d{1,2})$/);
+      if (iso) return `${pad2(iso[3])}/${pad2(iso[2])}/${iso[1]}`;
+
+      const dmy = text.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/);
+      if (dmy) return `${pad2(dmy[1])}/${pad2(dmy[2])}/${dmy[3]}`;
+
+      return text;
+    }
+
+    function adaMedanRekodTerus(item) {
+      return Boolean(
+        bacaTarikh(item)
+        || bacaStatusMentah(item)
+        || bacaMedan(item, ['Masa', 'masa', 'Masa Kehadiran', 'masa kehadiran'])
+      );
+    }
+
+    function tukarBarisSheetKeRekod(item, kelasHint = '') {
+      if (!item || typeof item !== 'object') return [];
+      const kelasAsas = bacaKelas(item) !== 'Tiada Kelas' ? bacaKelas(item) : String(kelasHint || '').trim();
+      if (adaMedanRekodTerus(item)) {
+        return [{
+          ...item,
+          ...(kelasAsas ? { Kelas: kelasAsas } : {})
+        }];
+      }
+
+      const nama = bacaNama(item);
+      const kelas = kelasAsas || bacaKelas(item);
+      if (!nama && !kelas) return [];
+
+      const rows = [];
+      for (const [key, value] of Object.entries(item)) {
+        const tarikh = normalTarikh(key);
+        const status = String(value || '').trim();
+        if (!tarikh || !status) continue;
+        if (!/^\d{2}\/\d{2}\/\d{4}$/.test(tarikh)) continue;
+
+        rows.push({
+          Nama: nama || '-',
+          Kelas: kelas,
+          Tarikh: tarikh,
+          Status: status
+        });
+      }
+
+      return rows;
+    }
+
+    function simpanCache(rows) {
+      try { localStorage.setItem(CACHE_KEY, JSON.stringify({ rows, at: new Date().toISOString() })); } catch (_) {}
+    }
+
+    function normalNamaKelas(item) {
+      const nama = bacaNama(item);
+      const kelas = bacaKelas(item);
+      if (!nama || !kelas || kelas === 'Tiada Kelas') return null;
+      return { nama, kelas };
+    }
+
+    function gabungMasterMurid(sumber = []) {
+      const map = new Map();
+      [...masterMurid, ...sumber]
+        .map(normalNamaKelas)
+        .filter(Boolean)
+        .forEach(item => map.set(`${item.nama}||${item.kelas}`, item));
+
+      masterMurid = Array.from(map.values()).sort((a, b) => {
+        const ikutKelas = a.kelas.localeCompare(b.kelas, 'ms');
+        return ikutKelas || a.nama.localeCompare(b.nama, 'ms');
+      });
+    }
+
+    function simpanMasterMurid() {
+      try { localStorage.setItem(MASTER_MURID_KEY, JSON.stringify(masterMurid)); } catch (_) {}
+    }
+
+    function bacaMasterMurid() {
+      try {
+        const raw = localStorage.getItem(MASTER_MURID_KEY);
+        if (!raw) return [];
+        const parsed = JSON.parse(raw);
+        return Array.isArray(parsed) ? parsed : [];
+      } catch (_) {
+        return [];
+      }
+    }
+
+    function kemaskiniMasterMurid(sumber = []) {
+      gabungMasterMurid(sumber);
+      simpanMasterMurid();
+    }
+
+    function semuaMuridGabung() {
+      const map = new Map();
+      [...masterMurid, ...dataPenuh]
+        .map(normalNamaKelas)
+        .filter(Boolean)
+        .forEach(item => map.set(`${item.nama}||${item.kelas}`, item));
+      return Array.from(map.values());
+    }
+
+    function kelasPautanPantas() {
+      return Object.keys(PAUTAN_REKOD_PANTAS)
+        .map(normalKelasLabel)
+        .filter(Boolean)
+        .sort((a, b) => a.localeCompare(b, 'ms'));
+    }
+
+    function muridPautanIkutKelas(kelas = '') {
+      const key = normalKelasLabel(kelas);
+      const sumber = key ? (PAUTAN_REKOD_PANTAS[key] || []) : [];
+      return sumber.map(item => ({ nama: item.nama, kelas: key }));
+    }
+
+    function semuaMuridPautan() {
+      return Object.entries(PAUTAN_REKOD_PANTAS).flatMap(([kelas, senarai]) =>
+        senarai.map(item => ({ nama: item.nama, kelas: normalKelasLabel(kelas) }))
+      );
+    }
+
+    function bacaCache() {
+      try {
+        const raw = localStorage.getItem(CACHE_KEY);
+        if (!raw) return null;
+        const p = JSON.parse(raw);
+        return Array.isArray(p.rows) ? p : null;
+      } catch (_) { return null; }
+    }
+
+    function tukarPayloadKeRekod(payload, kelasHint = '') {
+      if (Array.isArray(payload)) {
+        return payload.flatMap(item => tukarPayloadKeRekod(item, kelasHint));
+      }
+
+      if (!payload || typeof payload !== 'object') return [];
+
+      if (adaMedanRekodTerus(payload) || bacaNama(payload)) {
+        return tukarBarisSheetKeRekod(payload, kelasHint);
+      }
+
+      return Object.entries(payload).flatMap(([key, value]) => {
+        const hint = String(key || '').trim();
+        return tukarPayloadKeRekod(value, hint);
+      });
+    }
+
+    function dapatkanRowsApi(payload) {
+      if (Array.isArray(payload)) return tukarPayloadKeRekod(payload);
+      if (payload && Array.isArray(payload.data)) return tukarPayloadKeRekod(payload.data);
+      if (payload && typeof payload === 'object') return tukarPayloadKeRekod(payload);
+      return [];
+    }
+
+    function nampakMacamJson(text) {
+      const trimmed = String(text || '').trim();
+      return trimmed.startsWith('{') || trimmed.startsWith('[');
+    }
+
+    function responsPerluLogin(text) {
+      const html = String(text || '').toLowerCase();
+      return html.includes('sign in - google accounts')
+        || html.includes('accountchooser')
+        || html.includes('google accounts');
+    }
+
+    async function bacaPayloadApi(res) {
+      const text = await res.text();
+      const type = (res.headers.get('content-type') || '').toLowerCase();
+
+      if (responsPerluLogin(text)) {
+        throw new Error('Apps Script masih perlukan login Google. Guna pautan deploy Web App yang boleh diakses awam atau benarkan akses domain yang betul.');
+      }
+
+      if (!type.includes('application/json') && !nampakMacamJson(text)) {
+        throw new Error('Respons API bukan JSON');
+      }
+
+      try {
+        return JSON.parse(text);
+      } catch (_) {
+        throw new Error('JSON API tidak sah');
+      }
+    }
+
+    function isiPilihanKelas() {
+      const current = el.filterKelas.value;
+      const sumberKelas = [...semuaMuridGabung(), ...semuaMuridPautan()].map(item => item.kelas);
+      const list = Array.from(new Set(sumberKelas.map(normalKelasLabel).filter(k => k && k !== 'Tiada Kelas'))).sort((a,b) => a.localeCompare(b));
+      el.filterKelas.innerHTML = '<option value="">Semua kelas</option>';
+      list.forEach(k => {
+        const o = document.createElement('option');
+        o.value = k;
+        o.textContent = k;
+        el.filterKelas.appendChild(o);
+      });
+      if (list.includes(current)) el.filterKelas.value = current;
+      isiPilihanNamaCarian(el.cariNama.value);
+      isiPilihanKelasManual(el.manualKelas.value);
+    }
+
+    function isiPilihanNamaCarian(pilihan = '') {
+      const kelasDipilih = normalKelasLabel(el.filterKelas.value);
+      const sumberNama = [...semuaMuridGabung(), ...semuaMuridPautan()]
+        .filter(item => !kelasDipilih || item.kelas === kelasDipilih)
+        .map(item => item.nama);
+      const list = Array.from(new Set(sumberNama.filter(Boolean))).sort((a, b) => a.localeCompare(b, 'ms'));
+
+      el.cariNama.innerHTML = '<option value="">Semua murid</option>';
+      list.forEach(nama => {
+        const o = document.createElement('option');
+        o.value = nama;
+        o.textContent = nama;
+        el.cariNama.appendChild(o);
+      });
+      if (pilihan && list.includes(pilihan)) el.cariNama.value = pilihan;
+    }
+
+    function isiPilihanKelasManual(pilihan = '') {
+      const list = kelasPautanPantas();
+      el.manualKelas.innerHTML = '<option value="">Pilih kelas</option>';
+      list.forEach(k => {
+        const o = document.createElement('option');
+        o.value = k;
+        o.textContent = k;
+        el.manualKelas.appendChild(o);
+      });
+      if (pilihan && list.includes(pilihan)) el.manualKelas.value = pilihan;
+      isiPilihanMuridManual();
+    }
+
+    function isiPilihanMuridManual() {
+      const kelasDipilih = el.manualKelas.value;
+      const sumberNama = muridPautanIkutKelas(kelasDipilih)
+        .filter(item => !kelasDipilih || item.kelas === kelasDipilih)
+        .map(item => item.nama);
+      const listNama = Array.from(
+        new Set(sumberNama.filter(Boolean))
+      ).sort((a, b) => a.localeCompare(b, 'ms'));
+
+      const current = el.manualNama.value;
+      el.manualNama.innerHTML = '<option value="">Pilih murid</option>';
+      listNama.forEach(n => {
+        const o = document.createElement('option');
+        o.value = n;
+        o.textContent = n;
+        el.manualNama.appendChild(o);
+      });
+      if (current && listNama.includes(current)) el.manualNama.value = current;
+      renderPautanRekodPantas();
+    }
+
+    function renderPautanRekodPantas() {
+      const kelasDipilih = normalKelasLabel(el.manualKelas.value);
+      const namaDipilih = String(el.manualNama.value || '').trim();
+      const senaraiAsal = PAUTAN_REKOD_PANTAS[kelasDipilih] || [];
+      const senarai = namaDipilih
+        ? senaraiAsal.filter(item => item.nama === namaDipilih)
+        : senaraiAsal;
+
+      el.manualQuickLinksList.innerHTML = '';
+      if (!senarai.length) {
+        el.manualQuickLinks.classList.add('hidden');
+        return;
+      }
+
+      senarai.forEach(item => {
+        const row = document.createElement('div');
+        row.className = 'quick-link-item';
+
+        const nama = document.createElement('div');
+        nama.className = 'quick-link-name';
+        nama.textContent = item.nama;
+
+        const link = document.createElement('a');
+        link.className = 'quick-link-btn';
+        link.href = item.url;
+        link.target = '_blank';
+        link.rel = 'noopener noreferrer';
+        link.textContent = 'Tekan untuk Rekod Hadir';
+
+        row.appendChild(nama);
+        row.appendChild(link);
+        el.manualQuickLinksList.appendChild(row);
+      });
+
+      el.manualQuickLinks.classList.remove('hidden');
+    }
+
+    function rowsDitapisAsas() {
+      const q = el.cariNama.value.trim().toLowerCase();
+      const kelas = el.filterKelas.value;
+      const tarikhApi = formatTarikhApi(el.filterTarikh.value);
+
+      return dataPenuh.filter(item => {
+        const nama = bacaNama(item).toLowerCase();
+        const kelasItem = bacaKelas(item);
+        const tarikhItem = bacaTarikh(item);
+
+        const okNama = q ? nama === q : true;
+        const okKelas = kelas ? kelasItem === kelas : true;
+      const okTarikh = tarikhApi ? tarikhItem === tarikhApi : true;
+      return okNama && okKelas && okTarikh;
+    });
+  }
+
+    function rowsPaparanDitapis() {
+      const q = el.cariNama.value.trim().toLowerCase();
+      const kelasDipilih = el.filterKelas.value;
+      const tarikhApi = formatTarikhApi(el.filterTarikh.value);
+      const roster = [...semuaMuridGabung(), ...semuaMuridPautan()];
+      const mapPaparan = new Map();
+
+      roster
+        .map(normalNamaKelas)
+        .filter(Boolean)
+        .forEach(item => {
+          mapPaparan.set(`${item.nama}||${item.kelas}`, {
+            Nama: item.nama,
+            Kelas: item.kelas,
+            Tarikh: tarikhApi,
+            Status: 'Tidak Hadir',
+            Masa: '',
+            __defaultTidakHadir: true
+          });
+        });
+
+      rowsDitapisAsas().forEach(item => {
+        const nama = bacaNama(item) || '-';
+        const kelas = bacaKelas(item);
+        const key = `${nama}||${kelas}`;
+        mapPaparan.set(key, {
+          ...item,
+          Nama: nama,
+          Kelas: kelas,
+          Tarikh: bacaTarikh(item) || tarikhApi,
+          Status: normalStatus(bacaStatusMentah(item))
+        });
+      });
+
+      return Array.from(mapPaparan.values()).filter(item => {
+        const nama = bacaNama(item).toLowerCase();
+        const kelasItem = bacaKelas(item);
+        const tarikhItem = bacaTarikh(item) || tarikhApi;
+
+        const okNama = q ? nama === q : true;
+        const okKelas = kelasDipilih ? kelasItem === kelasDipilih : true;
+        const okTarikh = tarikhApi ? tarikhItem === tarikhApi : true;
+        return okNama && okKelas && okTarikh;
+      });
+    }
+
+    function rowsDitapis() {
+      if (PADAN_TAB_KEHADIRAN) return rowsDitapisAsas();
+      const rowsPaparan = rowsPaparanDitapis();
+      return rowsPaparan.length ? rowsPaparan : rowsDitapisAsas();
+    }
+
+    function sortRows(rows) {
+      const sorted = [...rows];
+      sorted.sort((a, b) => {
+        const av = String((a[sortKey] ?? (sortKey === 'Kelas' ? bacaKelas(a) : '')) || '').toLowerCase();
+        const bv = String((b[sortKey] ?? (sortKey === 'Kelas' ? bacaKelas(b) : '')) || '').toLowerCase();
+        return av.localeCompare(bv, 'ms') * sortDir;
+      });
+      return sorted;
+    }
+
+    function kiraStat(rows) {
+      const jumlah = rows.length;
+      const hadir = rows.filter(r => normalStatus(bacaStatusMentah(r)) === 'Hadir').length;
+      const tidak = jumlah - hadir;
+      const peratus = jumlah ? ((hadir / jumlah) * 100).toFixed(1) : '0.0';
+      return { jumlah, hadir, tidak, peratus };
+    }
+
+    function renderKpi(rows) {
+      const s = kiraStat(rows);
+      document.getElementById('statJumlah').textContent = s.jumlah;
+      document.getElementById('statHadir').textContent = s.hadir;
+      document.getElementById('statTidak').textContent = s.tidak;
+      document.getElementById('statPeratus').textContent = `${s.peratus}%`;
+    }
+
+    function renderTable(rows) {
+      const sorted = sortRows(rows);
+      el.rowCount.textContent = `${sorted.length} rekod`;
+
+      if (!sorted.length) {
+        el.tableBody.innerHTML = '<tr><td colspan="3" class="empty">Tiada data untuk penapis semasa.</td></tr>';
+        return;
+      }
+
+      el.tableBody.innerHTML = sorted.map(item => {
+        const nama = bacaNama(item) || '-';
+        const kelas = bacaKelas(item);
+        const status = normalStatus(bacaStatusMentah(item));
+        return `<tr>
+          <td>${nama}</td>
+          <td>${kelas}</td>
+          <td><span class="pill ${status === 'Hadir' ? 'hadir' : 'tidak'}">${status}</span></td>
+        </tr>`;
+      }).join('');
+    }
+
+    function renderCharts(rows) {
+      if (typeof Chart === 'undefined') return;
+
+      const s = kiraStat(rows);
+      const byKelas = new Map();
+      rows.forEach(item => {
+        const kelas = bacaKelas(item);
+        const status = normalStatus(bacaStatusMentah(item));
+        if (!byKelas.has(kelas)) byKelas.set(kelas, { total: 0, hadir: 0 });
+        const r = byKelas.get(kelas);
+        r.total += 1;
+        if (status === 'Hadir') r.hadir += 1;
+      });
+
+      const labelsStatus = ['Hadir', 'Tidak Hadir'];
+      const nilaiStatus = [s.hadir, s.tidak];
+
+      if (!chartStatus) {
+        const statusCanvas = document.getElementById('chartStatus');
+        chartStatus = new Chart(statusCanvas, {
+          type: 'doughnut',
+          data: {
+            labels: labelsStatus,
+            datasets: [{
+              data: nilaiStatus,
+              backgroundColor: ['#39ff9d', '#ff4d6d'],
+              borderWidth: 0,
+              hoverOffset: 6
+            }]
+          },
+          options: {
+            maintainAspectRatio: false,
+            cutout: '70%',
+            animation: {
+              duration: 1100,
+              easing: 'easeOutCubic',
+              animateRotate: true,
+              animateScale: true
+            },
+            plugins: {
+              legend: {
+                position: 'bottom',
+                labels: {
+                  color: '#ffffff',
+                  font: { size: 14 }
+                }
+              }
+            },
+            elements: {
+              arc: {
+                borderWidth: 0,
+                borderRadius: 10
+              }
+            }
+          }
+        });
+      } else {
+        chartStatus.data.labels = labelsStatus;
+        chartStatus.data.datasets[0].data = nilaiStatus;
+        chartStatus.update();
+      }
+
+      const labelsKelas = Array.from(byKelas.keys());
+      const peratusKelas = labelsKelas.map(k => {
+        const x = byKelas.get(k);
+        return x.total ? Math.round((x.hadir / x.total) * 100) : 0;
+      });
+
+      if (!chartKelas) {
+        chartKelas = new Chart(document.getElementById('chartKelas'), {
+          type: 'bar',
+          plugins: [kelasValueLabelPlugin],
+          data: {
+            labels: labelsKelas,
+            datasets: [{
+              label: 'Peratus (%)',
+              data: peratusKelas,
+              borderRadius: 12,
+              borderSkipped: false,
+              backgroundColor: context => {
+                const chart = context.chart;
+                const area = chart.chartArea;
+                if (!area) return '#39ff9d';
+                const gradient = chart.ctx.createLinearGradient(0, area.bottom, 0, area.top);
+                gradient.addColorStop(0, '#00a86b');
+                gradient.addColorStop(0.55, '#2dff9d');
+                gradient.addColorStop(1, '#beffe5');
+                return gradient;
+              }
+            }]
+          },
+          options: {
+            maintainAspectRatio: false,
+            animation: {
+              duration: 1200,
+              easing: 'easeOutCubic',
+              delay: ctx => (ctx.type === 'data' ? ctx.dataIndex * 70 : 0)
+            },
+            plugins: { legend: { display: false } },
+            scales: {
+              x: {
+                ticks: { color: '#ffffff', font: { weight: '700' } },
+                grid: { color: 'rgba(128, 196, 255, 0.12)' }
+              },
+              y: {
+                beginAtZero: true,
+                max: 100,
+                ticks: { callback: v => `${v}%`, color: '#bcd9ff' },
+                grid: { color: 'rgba(128, 196, 255, 0.16)' }
+              }
+            }
+          }
+        });
+      } else {
+        chartKelas.data.labels = labelsKelas;
+        chartKelas.data.datasets[0].data = peratusKelas;
+        chartKelas.update();
+      }
+    }
+
+    function renderSemua() {
+      const rows = rowsDitapis();
+      renderKpi(rows);
+      renderTable(rows);
+      renderCharts(rows);
+    }
+
+    function paparFallbackTempatan() {
+      dataPenuh = [];
+      isiPilihanKelas();
+      renderSemua();
+    }
+
+    function muatTurunPdf() {
+      const jsPdfLib = window.jspdf && window.jspdf.jsPDF;
+      if (!jsPdfLib) {
+        toast('Fungsi PDF belum tersedia.', 'warn');
+        return;
+      }
+
+      const rows = rowsDitapis();
+      const stat = kiraStat(rows);
+      const tarikhApi = formatTarikhApi(el.filterTarikh.value || hariIniIso());
+      const kelas = el.filterKelas.value || 'Semua kelas';
+      const doc = new jsPdfLib({ unit: 'pt', format: 'a4' });
+      const pageW = doc.internal.pageSize.getWidth();
+      const pageH = doc.internal.pageSize.getHeight();
+      const x = 40;
+      let y = 42;
+
+      doc.setFontSize(14);
+      doc.text('Laporan Kehadiran myHadir', x, y);
+      y += 18;
+      doc.setFontSize(10);
+      doc.text(`Tarikh: ${tarikhApi}`, x, y);
+      y += 14;
+      doc.text(`Kelas: ${kelas}`, x, y);
+      y += 14;
+      doc.text(`Jumlah: ${stat.jumlah} | Hadir: ${stat.hadir} | Tidak Hadir: ${stat.tidak} | Peratus: ${stat.peratus}%`, x, y);
+      y += 18;
+
+      doc.text('Bil', x, y);
+      doc.text('Nama', x + 30, y);
+      doc.text('Kelas', x + 290, y);
+      doc.text('Status', x + 360, y);
+      doc.text('Masa', x + 445, y);
+      y += 8;
+      doc.line(x, y, pageW - 40, y);
+      y += 14;
+
+      rows.forEach((item, idx) => {
+        if (y > pageH - 40) {
+          doc.addPage();
+          y = 42;
+        }
+        const nama = (bacaNama(item) || '-').slice(0, 40);
+        const kelasRow = bacaKelas(item).slice(0, 10);
+        const status = normalStatus(bacaStatusMentah(item));
+        const masa = bacaMedan(item, ['Masa', 'masa', 'Masa Kehadiran', 'masa kehadiran']).slice(0, 12) || '-';
+
+        doc.text(String(idx + 1), x, y);
+        doc.text(nama, x + 30, y);
+        doc.text(kelasRow, x + 290, y);
+        doc.text(status, x + 360, y);
+        doc.text(masa, x + 445, y);
+        y += 14;
+      });
+
+      doc.save(`laporan-kehadiran-${tarikhApi.replace(/\//g, '-')}.pdf`);
+    }
+
+    async function ambilData() {
+      const tarikhIso = el.filterTarikh.value || hariIniIso();
+      const tarikhApi = formatTarikhApi(tarikhIso);
+      const sep = SCRIPT_URL.includes('?') ? '&' : '?';
+      const url = `${SCRIPT_URL}${sep}tarikh=${encodeURIComponent(tarikhApi)}`;
+
+      setDebugInfo({
+        tarikhIso,
+        tarikhApi,
+        url,
+        status: 'Memanggil Apps Script...'
+      });
+
+      try {
+        const res = await fetch(url, FETCH_OPTIONS);
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        const payload = await bacaPayloadApi(res);
+        if (payload && payload.success === false) {
+          throw new Error(payload.message || 'Apps Script memulangkan ralat.');
+        }
+        dataPenuh = dapatkanRowsApi(payload);
+        kemaskiniMasterMurid(dataPenuh);
+
+        setDebugInfo({
+          tarikhIso,
+          tarikhApi,
+          url,
+          status: 'Berjaya ambil data',
+          http: res.status,
+          rows: Array.isArray(dataPenuh) ? dataPenuh.length : 0,
+          error: Array.isArray(dataPenuh) && dataPenuh.length === 0 ? 'Tiada rekod dipulangkan oleh Apps Script untuk tarikh ini.' : '-'
+        });
+
+        if (!Array.isArray(payload) && !Array.isArray(payload?.data)) {
+          toast('Format API tidak serasi dengan paparan murid.', 'warn');
+        }
+
+        isiPilihanKelas();
+        renderSemua();
+        simpanCache(dataPenuh);
+        setNetworkUI(true);
+        el.metaData.textContent = `Data dikemaskini: ${new Date().toLocaleTimeString('ms-MY')} | Tarikh: ${tarikhApi}`;
+      } catch (err) {
+        setDebugInfo({
+          tarikhIso,
+          tarikhApi,
+          url,
+          status: 'Gagal ambil data',
+          error: err.message || 'Tidak diketahui'
+        });
+        setNetworkUI(navigator.onLine);
+        const c = bacaCache();
+        if (c) {
+          dataPenuh = c.rows;
+          kemaskiniMasterMurid(dataPenuh);
+          isiPilihanKelas();
+          renderSemua();
+          el.metaData.textContent = `Data cache digunakan (${new Date(c.at).toLocaleString('ms-MY')}) | Ralat API: ${err.message || 'Tidak diketahui'}`;
+          toast('Guna data simpanan tempatan.', 'warn');
+        } else {
+          paparFallbackTempatan();
+          el.metaData.textContent = `Gagal ambil data langsung: ${err.message || 'Tidak diketahui'}`;
+          toast('API dashboard gagal dicapai. Papar senarai tempatan sahaja.', 'warn');
+        }
+      }
+    }
+
+    function initSorting() {
+      document.querySelectorAll('th[data-sort]').forEach(th => {
+        th.addEventListener('click', () => {
+          const key = th.dataset.sort;
+          if (sortKey === key) sortDir *= -1;
+          else { sortKey = key; sortDir = 1; }
+          renderTable(rowsDitapis());
+        });
+      });
+    }
+
+    function init() {
+      masterMurid = bacaMasterMurid();
+      el.filterTarikh.value = hariIniIso();
+      formatMasaKini();
+      setInterval(formatMasaKini, 1000);
+
+      setNetworkUI(navigator.onLine);
+      window.addEventListener('online', () => { setNetworkUI(true); toast('Kembali online.', 'ok'); ambilData(); });
+      window.addEventListener('offline', () => { setNetworkUI(false); toast('Peranti offline.', 'warn'); });
+
+      el.btnRefresh.addEventListener('click', ambilData);
+      el.cariNama.addEventListener('change', renderSemua);
+      el.filterKelas.addEventListener('change', () => {
+        isiPilihanNamaCarian();
+        renderSemua();
+      });
+      el.filterTarikh.addEventListener('change', ambilData);
+      el.filterTarikh.addEventListener('click', bukaPemilihTarikh);
+      el.filterTarikh.addEventListener('keydown', ev => {
+        if (ev.key === 'Enter' || ev.key === ' ') {
+          ev.preventDefault();
+          bukaPemilihTarikh();
+        }
+      });
+      el.btnPdf.addEventListener('click', muatTurunPdf);
+      el.btnPrint.addEventListener('click', () => window.print());
+      el.btnToggleManual.addEventListener('click', bukaInputManual);
+      el.btnCancelManual.addEventListener('click', tutupInputManual);
+      el.manualKelas.addEventListener('change', isiPilihanMuridManual);
+      el.manualNama.addEventListener('change', renderPautanRekodPantas);
+
+      initSorting();
+      ambilData();
+      setInterval(ambilData, 30000);
+
+      if ('serviceWorker' in navigator) {
+        window.addEventListener('load', () => navigator.serviceWorker.register('./sw.js').catch(() => {}));
+      }
+    }
+
+    init();
+  </script>
+</body>
+</html>

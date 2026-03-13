@@ -1,25 +1,60 @@
-const SPREADSHEET_ID = '1enSJlvIlkzV7c-1mkatMeSrTERFmB3czo3c3iSSAJlE';
+﻿const SPREADSHEET_ID = '1enSJlvIlkzV7c-1mkatMeSrTERFmB3czo3c3iSSAJlE';
 const GURU_PASSWORD = 'myHadir1234';
+const API_TOKEN = 'myhadir-token-2026';
 const SHEET_PREFIX = 'Kehadiran ';
 const META_HEADERS = ['Nama', 'Kelas', 'Masa Akhir', 'Sumber Akhir', 'Kemaskini ISO'];
 
 function doGet(e) {
   try {
-    const tarikh = normalTarikh((e && e.parameter && e.parameter.tarikh) || '');
+    const params = (e && e.parameter) || {};
+    if (!tokenValid_(params)) {
+      const access = semakAkses_();
+      if (!access.allowed) {
+        return jsonOutput({
+          success: false,
+          message: access.message
+        }, params);
+      }
+    }
+
+    const tarikh = normalTarikh(params.tarikh || '');
     const rows = ambilRekodKehadiran(tarikh);
     return jsonOutput({
       success: true,
       tarikh: tarikh || '',
       data: rows
-    });
+    }, params);
   } catch (err) {
     return jsonOutput({
       success: false,
       message: err && err.message ? err.message : 'Ralat doGet'
-    });
+    }, e && e.parameter);
   }
 }
+function semakAkses_() {
+  const email = getUserEmail_();
+  const role = getUserRole_(email);
+  if (role === 'guru') return { allowed: true };
+  if (role === 'murid') return { allowed: false, message: 'Akses API disekat (murid).' };
+  return { allowed: false, message: 'Log masuk guru diperlukan.' };
+}
 
+function tokenValid_(params) {
+  const token = String((params && params.token) || '').trim();
+  return token && token === API_TOKEN;
+}
+
+function getUserEmail_() {
+  return String(Session.getActiveUser().getEmail() || '').trim().toLowerCase();
+}
+
+function getUserRole_(email) {
+  const userEmail = String(email || '').trim().toLowerCase();
+  if (!userEmail) return 'unknown';
+  if (userEmail.indexOf('g-') === 0) return 'guru';
+  if (userEmail.indexOf('m-') === 0) return 'murid';
+  return 'other';
+}
 function doPost(e) {
   try {
     const payload = bacaJsonBody(e);
@@ -58,12 +93,12 @@ function doPost(e) {
       success: true,
       message: 'Kehadiran manual berjaya disimpan.',
       ...result
-    });
+    }, e && e.parameter);
   } catch (err) {
     return jsonOutput({
       success: false,
       message: err && err.message ? err.message : 'Ralat doPost'
-    });
+    }, e && e.parameter);
   }
 }
 
@@ -113,7 +148,7 @@ function bacaSheetKelas(sheet, tarikhTapis) {
   if (values.length < 2) return [];
 
   const headers = values[0].map(function(item) {
-    return String(item || '').trim();
+    return normalizeHeaderValue_(item);
   });
   const metaSet = buatMetaSet();
   const result = [];
@@ -307,8 +342,25 @@ function bacaJsonBody(e) {
   return JSON.parse(raw);
 }
 
-function jsonOutput(obj) {
+function jsonOutput(obj, params) {
+  const callback = String((params && params.callback) || '').trim();
+  if (callback) {
+    const body = callback + '(' + JSON.stringify(obj) + ');';
+    return ContentService
+      .createTextOutput(body)
+      .setMimeType(ContentService.MimeType.JAVASCRIPT);
+  }
   return ContentService
     .createTextOutput(JSON.stringify(obj))
     .setMimeType(ContentService.MimeType.JSON);
 }
+
+function normalizeHeaderValue_(value) {
+  if (Object.prototype.toString.call(value) === '[object Date]' && !isNaN(value)) {
+    return Utilities.formatDate(value, Session.getScriptTimeZone(), 'dd/MM/yyyy');
+  }
+  return String(value || '').trim();
+}
+
+
+

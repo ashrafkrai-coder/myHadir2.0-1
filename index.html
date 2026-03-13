@@ -796,10 +796,14 @@
   </nav>
 
   <script>
-    const SCRIPT_URL = "https://script.google.com/a/macros/moe-dl.edu.my/s/AKfycbz-iXayYiVny_-bW4HEuPquQ-6x64M9ZT_kCM3jARi34vftiAFsUsXI2QJTVNGuNw/exec";
+    const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbyUoS-vbEbwBgkalN1Sw-T7eBRToQHhaQzOdJ6n-24irVJ0dJqZYpoB3vjg0HuIu_1J/exec";
+    const API_TOKEN = "myhadir-token-2026";
     const GURU_PASSWORD = 'myHadir1234';
     const CACHE_KEY = 'myhadir_cache_v2';
     const MASTER_MURID_KEY = 'myhadir_master_murid_v1';
+    const PADAN_TAB_KEHADIRAN = true;
+    const FETCH_OPTIONS = { cache: 'no-cache', redirect: 'follow', mode: 'cors', credentials: 'include' };
+    const JSONP_TIMEOUT_MS = 10000;
     const MANUAL_UNLOCK_KEY = 'myhadir_manual_unlocked';
     const PAUTAN_REKOD_PANTAS = {
       '5 PVMA': [
@@ -1604,10 +1608,10 @@
 
         const okNama = q ? nama === q : true;
         const okKelas = kelas ? kelasItem === kelas : true;
-        const okTarikh = tarikhItem ? tarikhItem === tarikhApi : true;
-        return okNama && okKelas && okTarikh;
-      });
-    }
+      const okTarikh = tarikhApi ? tarikhItem === tarikhApi : true;
+      return okNama && okKelas && okTarikh;
+    });
+  }
 
     function rowsPaparanDitapis() {
       const q = el.cariNama.value.trim().toLowerCase();
@@ -1656,6 +1660,7 @@
     }
 
     function rowsDitapis() {
+      if (PADAN_TAB_KEHADIRAN) return rowsDitapisAsas();
       const rowsPaparan = rowsPaparanDitapis();
       return rowsPaparan.length ? rowsPaparan : rowsDitapisAsas();
     }
@@ -1898,23 +1903,61 @@
       doc.save(`laporan-kehadiran-${tarikhApi.replace(/\//g, '-')}.pdf`);
     }
 
+    function jsonpRequest(baseUrl) {
+      return new Promise((resolve, reject) => {
+        const cbName = `jsonp_${Date.now()}_${Math.floor(Math.random() * 100000)}`;
+        const sep = baseUrl.includes('?') ? '&' : '?';
+        const url = `${baseUrl}${sep}callback=${encodeURIComponent(cbName)}`;
+
+        const script = document.createElement('script');
+        const timeout = setTimeout(() => {
+          cleanup();
+          reject(new Error('JSONP timeout'));
+        }, JSONP_TIMEOUT_MS);
+
+        function cleanup() {
+          clearTimeout(timeout);
+          delete window[cbName];
+          script.remove();
+        }
+
+        window[cbName] = data => {
+          cleanup();
+          resolve(data);
+        };
+
+        script.onerror = () => {
+          cleanup();
+          reject(new Error('JSONP error'));
+        };
+
+        script.src = url;
+        document.head.appendChild(script);
+      });
+    }
+
     async function ambilData() {
       const tarikhIso = el.filterTarikh.value || hariIniIso();
       const tarikhApi = formatTarikhApi(tarikhIso);
       const sep = SCRIPT_URL.includes('?') ? '&' : '?';
-      const url = `${SCRIPT_URL}${sep}tarikh=${encodeURIComponent(tarikhApi)}`;
+      const baseUrl = `${SCRIPT_URL}${sep}tarikh=${encodeURIComponent(tarikhApi)}&token=${encodeURIComponent(API_TOKEN)}`;
 
       setDebugInfo({
         tarikhIso,
         tarikhApi,
-        url,
+        url: baseUrl,
         status: 'Memanggil Apps Script...'
       });
 
       try {
-        const res = await fetch(url, { cache: 'no-cache', redirect: 'follow' });
-        if (!res.ok) throw new Error(`HTTP ${res.status}`);
-        const payload = await bacaPayloadApi(res);
+        let payload;
+        try {
+          const res = await fetch(baseUrl, FETCH_OPTIONS);
+          if (!res.ok) throw new Error(`HTTP ${res.status}`);
+          payload = await bacaPayloadApi(res);
+        } catch (fetchErr) {
+          payload = await jsonpRequest(baseUrl);
+        }
         if (payload && payload.success === false) {
           throw new Error(payload.message || 'Apps Script memulangkan ralat.');
         }
@@ -1926,7 +1969,7 @@
           tarikhApi,
           url,
           status: 'Berjaya ambil data',
-          http: res.status,
+          http: '-',
           rows: Array.isArray(dataPenuh) ? dataPenuh.length : 0,
           error: Array.isArray(dataPenuh) && dataPenuh.length === 0 ? 'Tiada rekod dipulangkan oleh Apps Script untuk tarikh ini.' : '-'
         });
@@ -1955,7 +1998,7 @@
           kemaskiniMasterMurid(dataPenuh);
           isiPilihanKelas();
           renderSemua();
-          el.metaData.textContent = `Data cache digunakan (${new Date(c.at).toLocaleString('ms-MY')})`;
+          el.metaData.textContent = `Data cache digunakan (${new Date(c.at).toLocaleString('ms-MY')}) | Ralat API: ${err.message || 'Tidak diketahui'}`;
           toast('Guna data simpanan tempatan.', 'warn');
         } else {
           paparFallbackTempatan();
