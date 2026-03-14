@@ -180,22 +180,30 @@ function doPost(e) {
 }
 
 function bacaSheetKelas(sheet, kelasDefault, tarikhTapis) {
-  const values = sheet.getDataRange().getValues();
-  if (values.length < 2) return [];
+  const lastRow = sheet.getLastRow();
+  const lastCol = sheet.getLastColumn();
+  if (lastRow < 2 || lastCol < 1) return [];
 
-  const headers = values[0].map(function(item) {
-    return normalizeHeaderValue_(item);
-  });
-  const result = [];
+  const headerRow = sheet.getRange(1, 1, 1, lastCol).getValues()[0];
+  const headers = headerRow.map(function(item) { return normalizeHeaderValue_(item); });
 
   const dateCol = headers.indexOf(tarikhTapis);
   if (dateCol === -1) return [];
 
-  for (var i = 1; i < values.length; i += 1) {
-    const row = values[i];
-    const nama = String(row[0] || '').trim();
+  const nRows = lastRow - 1;
+  const colNama = sheet.getRange(2, 1, nRows, 1).getValues();
+  const colStatus = sheet.getRange(2, dateCol + 1, nRows, 1).getValues();
+
+  const masaIdx = headers.indexOf('Masa Akhir');
+  const sumberIdx = headers.indexOf('Sumber Akhir');
+  const colMasa = masaIdx === -1 ? null : sheet.getRange(2, masaIdx + 1, nRows, 1).getValues();
+  const colSumber = sumberIdx === -1 ? null : sheet.getRange(2, sumberIdx + 1, nRows, 1).getValues();
+
+  const result = [];
+  for (var i = 0; i < nRows; i += 1) {
+    const nama = String((colNama[i] && colNama[i][0]) || '').trim();
     const kelas = normalKelas(kelasDefault || '');
-    const status = String(row[dateCol] || '').trim();
+    const status = String((colStatus[i] && colStatus[i][0]) || '').trim();
     if (!nama || !kelas || !status) continue;
 
     result.push({
@@ -203,8 +211,8 @@ function bacaSheetKelas(sheet, kelasDefault, tarikhTapis) {
       Kelas: kelas,
       Tarikh: tarikhTapis,
       Status: status,
-      Masa: bacaNilaiMeta(row, headers, 'Masa Akhir'),
-      Sumber: bacaNilaiMeta(row, headers, 'Sumber Akhir')
+      Masa: colMasa ? String((colMasa[i] && colMasa[i][0]) || '').trim() : '',
+      Sumber: colSumber ? String((colSumber[i] && colSumber[i][0]) || '').trim() : ''
     });
   }
 

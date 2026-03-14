@@ -803,7 +803,8 @@
     const MASTER_MURID_KEY = 'myhadir_master_murid_v1';
     const PADAN_TAB_KEHADIRAN = true;
     const SENARAI_KELAS_FALLBACK = ['5 A', '5 B', '5 C', '5 D', '5 G', '5 H', '5 I', '5 J', '5 PVMA'];
-    const FETCH_OPTIONS = { cache: 'no-cache', redirect: 'follow', mode: 'cors', credentials: 'include' };
+    // "no-store" + cache-buster param below helps bypass intermediary caching (common with Apps Script).
+    const FETCH_OPTIONS = { cache: 'no-store', redirect: 'follow', mode: 'cors', credentials: 'include' };
     const JSONP_TIMEOUT_MS = 10000;
     const MANUAL_UNLOCK_KEY = 'myhadir_manual_unlocked';
     const PAUTAN_REKOD_PANTAS = {
@@ -1095,6 +1096,7 @@
     let masterMurid = [];
     let chartStatus;
     let chartKelas;
+    let ambilDataBusy = false;
     let sortKey = 'Nama';
     let sortDir = 1;
 
@@ -1954,10 +1956,15 @@
     }
 
     async function ambilData() {
+      // Prevent overlapping polling calls (can cause slow/stale UI updates).
+      if (ambilDataBusy) return;
+      ambilDataBusy = true;
+
       const tarikhIso = el.filterTarikh.value || hariIniIso();
       const tarikhApi = formatTarikhApi(tarikhIso);
       const sep = SCRIPT_URL.includes('?') ? '&' : '?';
-      const baseUrl = `${SCRIPT_URL}${sep}tarikh=${encodeURIComponent(tarikhApi)}&token=${encodeURIComponent(API_TOKEN)}`;
+      const cacheBust = Date.now();
+      const baseUrl = `${SCRIPT_URL}${sep}tarikh=${encodeURIComponent(tarikhApi)}&token=${encodeURIComponent(API_TOKEN)}&ts=${cacheBust}`;
 
       setDebugInfo({
         tarikhIso,
@@ -1969,9 +1976,15 @@
       try {
         let payload;
         try {
-          const res = await fetch(baseUrl, FETCH_OPTIONS);
-          if (!res.ok) throw new Error(`HTTP ${res.status}`);
-          payload = await bacaPayloadApi(res);
+          const controller = new AbortController();
+          const timeout = setTimeout(() => controller.abort(), 12000);
+          try {
+            const res = await fetch(baseUrl, { ...FETCH_OPTIONS, signal: controller.signal });
+            if (!res.ok) throw new Error(`HTTP ${res.status}`);
+            payload = await bacaPayloadApi(res);
+          } finally {
+            clearTimeout(timeout);
+          }
         } catch (fetchErr) {
           payload = await jsonpRequest(baseUrl);
         }
@@ -2022,6 +2035,8 @@
           el.metaData.textContent = `Gagal ambil data langsung: ${err.message || 'Tidak diketahui'}`;
           toast('API dashboard gagal dicapai. Papar senarai tempatan sahaja.', 'warn');
         }
+      } finally {
+        ambilDataBusy = false;
       }
     }
 
@@ -2070,6 +2085,7 @@
       initSorting();
       ambilData();
       setInterval(ambilData, 30000);
+      document.addEventListener('visibilitychange', () => { if (!document.hidden) ambilData(); });
 
       if ('serviceWorker' in navigator) {
         window.addEventListener('load', () => navigator.serviceWorker.register('./sw.js').catch(() => {}));
