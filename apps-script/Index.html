@@ -1277,11 +1277,11 @@
 
     function normalStatus(val) {
       const s = String(val || '').trim().toLowerCase();
-      if (!s) return 'Hadir';
+      if (!s) return 'Tidak Hadir';
+      if (s === 'th' || s === 'tidak hadir' || s === 'tak hadir' || s === 'absen' || s === 'ponteng' || s === 'x hadir' || s === '0' || s === 'false') return 'Tidak Hadir';
+      if (s.includes('tidak hadir') || s.includes('tak hadir') || s.includes('x hadir') || s.includes('absen') || s.includes('ponteng')) return 'Tidak Hadir';
       if (s === 'h' || s === 'hadir' || s === 'present' || s === '1' || s === 'true' || s === 'ya') return 'Hadir';
-      if (s === 'th' || s === 'tidak hadir' || s === 'absen' || s === 'ponteng' || s === 'x hadir' || s === '0' || s === 'false') return 'Tidak Hadir';
       if (/(^|[^a-z])hadir([^a-z]|$)/.test(s) || s.includes('present')) return 'Hadir';
-      if (s.includes('tidak hadir') || s.includes('x hadir') || s.includes('absen') || s.includes('ponteng')) return 'Tidak Hadir';
       return 'Hadir';
     }
 
