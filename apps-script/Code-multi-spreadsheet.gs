@@ -345,7 +345,29 @@ function normalizeHeaderValue_(value) {
   if (Object.prototype.toString.call(value) === '[object Date]' && !isNaN(value)) {
     return Utilities.formatDate(value, Session.getScriptTimeZone(), 'dd/MM/yyyy');
   }
-  return String(value || '').trim();
+
+  const text = String(value || '').trim();
+  const parsed = parseTarikhHeader_(text);
+  return parsed || text;
+}
+
+function parseTarikhHeader_(text) {
+  const raw = String(text || '').trim();
+  if (!raw) return '';
+
+  // Accept dd/MM/yyyy, d/M/yyyy, dd-MM-yyyy, d-M-yyyy
+  let m = raw.match(/^(\d{1,2})[\/\-](\d{1,2})[\/\-](\d{4})$/);
+  if (m) {
+    return pad2(m[1]) + '/' + pad2(m[2]) + '/' + m[3];
+  }
+
+  // Accept yyyy-MM-dd or yyyy/MM/dd
+  m = raw.match(/^(\d{4})[\/\-](\d{1,2})[\/\-](\d{1,2})$/);
+  if (m) {
+    return pad2(m[3]) + '/' + pad2(m[2]) + '/' + m[1];
+  }
+
+  return '';
 }
 function tokenValid_(params) {
   const token = String((params && params.token) || '').trim();
