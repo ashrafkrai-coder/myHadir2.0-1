@@ -1,12 +1,13 @@
-const CACHE_NAME = 'dashboard-kehadiran-v20';
+const CACHE_NAME = 'dashboard-kehadiran-v22';
 const CORE_ASSETS = [
   './',
   './index.html',
   './manifest.json',
-  './icon-192x192.png',
-  './icon-512.png',
-  './icon-512x512.png',
-  './Untitled%20design.svg',
+  './icons/icon72.png',
+  './icons/icon128.png',
+  './icons/icon144.png',
+  './icons/icon192.png',
+  './icons/icon512.png',
   './logo-sekolah.jpg'
 ];
 
