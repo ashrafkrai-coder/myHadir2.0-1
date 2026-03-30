@@ -1,8 +1,21 @@
 ﻿const SPREADSHEET_ID = '1enSJlvIlkzV7c-1mkatMeSrTERFmB3czo3c3iSSAJlE';
 const GURU_PASSWORD = 'myHadir1234';
 const API_TOKEN = 'myhadir-token-2026';
-const SHEET_PREFIX = 'Kehadiran ';
+const SHEET_NAME = 'Kehadiran';
 const META_HEADERS = ['Nama', 'Kelas', 'Masa Akhir', 'Sumber Akhir', 'Kemaskini ISO'];
+const API_CACHE_PREFIX = 'kehadiran:';
+const API_CACHE_TTL_SEC = 60;
+const CLASS_SPREADSHEETS = {
+  '5 PVMA': '1uvg1CtZG8vM_afe2FFIlIXDCGFqAiHC3mM3-_zNSX6Q',
+  '5 J': '1lSGvyWTxKreBf1-QNwNfLDLNJsmgDut-d9vITIFAOBY',
+  '5 I': '1ohfS3OX2BYKvzm0eUGMB5vVDqjmuMqsZOr1GqRTocWQ',
+  '5 H': '1enSJlvIlkzV7c-1mkatMeSrTERFmB3czo3c3iSSAJlE',
+  '5 G': '1_PQ3zx_GHP1jJAlSocIQ_JJ8BZje7gH5rK77pJLZadQ',
+  '5 D': '1EYvfHcEp1HXsyhIdb0i9Y4Bnr30IIMIKMs6S61CdUpg',
+  '5 C': '1xz6SDuH0PUubFT2_J7gblaTLEs_--BkbHcRB7_7GmoU',
+  '5 B': '1_0vk2QFHmrZs4zE2muYT_N9C8xsEto5IySB67hR3Q7I',
+  '5 A': '1O1tElI85Hc_5vxykXPCno8H5fMdbtx31BQPxJ-DLPkk'
+};
 
 function doGet(e) {
   try {
@@ -18,7 +31,7 @@ function doGet(e) {
     }
 
     const tarikh = normalTarikh(params.tarikh || '');
-    const rows = ambilRekodKehadiran(tarikh);
+    const rows = ambilRekodKehadiranDenganCache(tarikh);
     return jsonOutput({
       success: true,
       tarikh: tarikh || '',
@@ -88,6 +101,7 @@ function doPost(e) {
       kemaskiniIso: kemaskiniIso,
       targetSheet: String(payload.target_sheet || '').trim()
     });
+    clearCacheTarikh_(tarikh);
 
     return jsonOutput({
       success: true,
@@ -103,11 +117,17 @@ function doPost(e) {
 }
 
 function simpanKehadiranManual(input) {
-  const ss = SpreadsheetApp.openById(SPREADSHEET_ID);
-  const sheetName = input.targetSheet || binaNamaSheet(input.kelas);
+  const kelas = normalKelas(input.kelas || '');
+  const spreadsheetId = CLASS_SPREADSHEETS[kelas];
+  if (!spreadsheetId) {
+    throw new Error('Tiada spreadsheet ID untuk kelas ' + kelas);
+  }
+
+  const ss = SpreadsheetApp.openById(spreadsheetId);
+  const sheetName = input.targetSheet || SHEET_NAME;
   const sheet = dapatkanAtauCiptaSheet(ss, sheetName);
   const headerMap = pastikanHeaderSheet(sheet, input.tarikh);
-  const rowIndex = dapatkanAtauCiptaBarisMurid(sheet, input.nama, input.kelas, headerMap);
+  const rowIndex = dapatkanAtauCiptaBarisMurid(sheet, input.nama, kelas, headerMap);
   const dateCol = headerMap[input.tarikh];
 
   sheet.getRange(rowIndex, dateCol).setValue(input.status);
@@ -116,6 +136,8 @@ function simpanKehadiranManual(input) {
   sheet.getRange(rowIndex, headerMap['Kemaskini ISO']).setValue(input.kemaskiniIso || new Date().toISOString());
 
   return {
+    spreadsheetId: spreadsheetId,
+    kelas: kelas,
     sheet: sheetName,
     row: rowIndex,
     column: dateCol,
@@ -123,15 +145,51 @@ function simpanKehadiranManual(input) {
   };
 }
 
-function ambilRekodKehadiran(tarikhTapis) {
-  const ss = SpreadsheetApp.openById(SPREADSHEET_ID);
-  const sheets = ss.getSheets().filter(function(sheet) {
-    return sheet.getName().indexOf(SHEET_PREFIX) === 0;
-  });
+function ambilRekodKehadiranDenganCache(tarikhTapis) {
+  const cacheKey = binaCacheKeyTarikh_(tarikhTapis);
+  if (!cacheKey) return ambilRekodKehadiran(tarikhTapis);
 
+  const cache = CacheService.getScriptCache();
+  const cached = cache.get(cacheKey);
+  if (cached) {
+    try {
+      const parsed = JSON.parse(cached);
+      if (Array.isArray(parsed)) return parsed;
+    } catch (_) {}
+  }
+
+  const rows = ambilRekodKehadiran(tarikhTapis);
+  try {
+    cache.put(cacheKey, JSON.stringify(rows), API_CACHE_TTL_SEC);
+  } catch (_) {}
+  return rows;
+}
+
+function binaCacheKeyTarikh_(tarikhTapis) {
+  const tarikh = String(tarikhTapis || '').trim();
+  if (!tarikh) return '';
+  return API_CACHE_PREFIX + tarikh;
+}
+
+function clearCacheTarikh_(tarikhTapis) {
+  const cacheKey = binaCacheKeyTarikh_(tarikhTapis);
+  if (!cacheKey) return;
+  try {
+    CacheService.getScriptCache().remove(cacheKey);
+  } catch (_) {}
+}
+
+function ambilRekodKehadiran(tarikhTapis) {
   const semua = [];
-  sheets.forEach(function(sheet) {
-    semua.push.apply(semua, bacaSheetKelas(sheet, tarikhTapis));
+  Object.keys(CLASS_SPREADSHEETS).forEach(function(kelas) {
+    const spreadsheetId = CLASS_SPREADSHEETS[kelas];
+    if (!spreadsheetId) return;
+
+    const ss = SpreadsheetApp.openById(spreadsheetId);
+    const sheet = ss.getSheetByName(SHEET_NAME);
+    if (!sheet) return;
+
+    semua.push.apply(semua, bacaSheetKelas(sheet, kelas, tarikhTapis));
   });
 
   semua.sort(function(a, b) {
@@ -143,7 +201,7 @@ function ambilRekodKehadiran(tarikhTapis) {
   return semua;
 }
 
-function bacaSheetKelas(sheet, tarikhTapis) {
+function bacaSheetKelas(sheet, kelasDefault, tarikhTapis) {
   // Dashboard calls are always "by tarikh". Avoid reading the full sheet width (many tarikh columns)
   // which can become slow as the sheet grows.
   if (tarikhTapis) {
@@ -158,8 +216,7 @@ function bacaSheetKelas(sheet, tarikhTapis) {
     if (dateCol === -1) return [];
 
     const nRows = lastRow - 1;
-    const colNama = sheet.getRange(2, 1, nRows, 1).getValues();
-    const colKelas = sheet.getRange(2, 2, nRows, 1).getValues();
+    const colNamaKelas = sheet.getRange(2, 1, nRows, 2).getValues();
     const colStatus = sheet.getRange(2, dateCol + 1, nRows, 1).getValues();
 
     const masaIdx = headers.indexOf('Masa Akhir');
@@ -169,8 +226,9 @@ function bacaSheetKelas(sheet, tarikhTapis) {
 
     const result = [];
     for (var i = 0; i < nRows; i += 1) {
-      const nama = String((colNama[i] && colNama[i][0]) || '').trim();
-      const kelas = normalKelas((colKelas[i] && colKelas[i][0]) || '');
+      const pair = colNamaKelas[i] || [];
+      const nama = String(pair[0] || '').trim();
+      const kelas = normalKelas(kelasDefault || pair[1] || '');
       const status = String((colStatus[i] && colStatus[i][0]) || '').trim();
       if (!nama || !kelas || !status) continue;
 
@@ -304,10 +362,6 @@ function buatMetaSet() {
     set[item] = true;
   });
   return set;
-}
-
-function binaNamaSheet(kelas) {
-  return SHEET_PREFIX + normalKelas(kelas);
 }
 
 function normalKelas(value) {

@@ -806,6 +806,7 @@
     // "no-store" + cache-buster param below helps bypass intermediary caching (common with Apps Script).
     const FETCH_OPTIONS = { cache: 'no-store', redirect: 'follow', mode: 'cors', credentials: 'include' };
     const JSONP_TIMEOUT_MS = 10000;
+    const POLL_INTERVAL_MS = 60000;
     const MANUAL_UNLOCK_KEY = 'myhadir_manual_unlocked';
     const PAUTAN_REKOD_PANTAS = {
       '5 PVMA': [
@@ -1453,6 +1454,17 @@
       } catch (_) { return null; }
     }
 
+    function paparCacheAwal() {
+      const c = bacaCache();
+      if (!c) return false;
+      dataPenuh = c.rows;
+      kemaskiniMasterMurid(dataPenuh);
+      isiPilihanKelas();
+      renderSemua();
+      el.metaData.textContent = `Data cache dipaparkan (${new Date(c.at).toLocaleString('ms-MY')}) sementara kemaskini rangkaian berjalan.`;
+      return true;
+    }
+
     function tukarPayloadKeRekod(payload, kelasHint = '') {
       if (Array.isArray(payload)) {
         return payload.flatMap(item => tukarPayloadKeRekod(item, kelasHint));
@@ -1789,7 +1801,7 @@
       } else {
         chartStatus.data.labels = labelsStatus;
         chartStatus.data.datasets[0].data = nilaiStatus;
-        chartStatus.update();
+        chartStatus.update('none');
       }
 
       const labelsKelas = Array.from(byKelas.keys());
@@ -1846,7 +1858,7 @@
       } else {
         chartKelas.data.labels = labelsKelas;
         chartKelas.data.datasets[0].data = peratusKelas;
-        chartKelas.update();
+        chartKelas.update('none');
       }
     }
 
@@ -1954,7 +1966,9 @@
       });
     }
 
-    async function ambilData() {
+    async function ambilData(opts = {}) {
+      const force = Boolean(opts && opts.force);
+      if (document.hidden && !force) return;
       // Prevent overlapping polling calls (can cause slow/stale UI updates).
       if (ambilDataBusy) return;
       ambilDataBusy = true;
@@ -2057,16 +2071,16 @@
       setInterval(formatMasaKini, 1000);
 
       setNetworkUI(navigator.onLine);
-      window.addEventListener('online', () => { setNetworkUI(true); toast('Kembali online.', 'ok'); ambilData(); });
+      window.addEventListener('online', () => { setNetworkUI(true); toast('Kembali online.', 'ok'); ambilData({ force: true }); });
       window.addEventListener('offline', () => { setNetworkUI(false); toast('Peranti offline.', 'warn'); });
 
-      el.btnRefresh.addEventListener('click', ambilData);
+      el.btnRefresh.addEventListener('click', () => ambilData({ force: true }));
       el.cariNama.addEventListener('change', renderSemua);
       el.filterKelas.addEventListener('change', () => {
         isiPilihanNamaCarian();
         renderSemua();
       });
-      el.filterTarikh.addEventListener('change', ambilData);
+      el.filterTarikh.addEventListener('change', () => ambilData({ force: true }));
       el.filterTarikh.addEventListener('click', bukaPemilihTarikh);
       el.filterTarikh.addEventListener('keydown', ev => {
         if (ev.key === 'Enter' || ev.key === ' ') {
@@ -2082,9 +2096,17 @@
       el.manualNama.addEventListener('change', renderPautanRekodPantas);
 
       initSorting();
-      ambilData();
-      setInterval(ambilData, 30000);
-      document.addEventListener('visibilitychange', () => { if (!document.hidden) ambilData(); });
+      const adaCacheAwal = paparCacheAwal();
+      if (!adaCacheAwal) {
+        el.metaData.textContent = 'Sedang memuatkan data terkini...';
+      }
+      ambilData({ force: true });
+      setInterval(() => {
+        if (!document.hidden) ambilData();
+      }, POLL_INTERVAL_MS);
+      document.addEventListener('visibilitychange', () => {
+        if (!document.hidden) ambilData({ force: true });
+      });
 
       if ('serviceWorker' in navigator) {
         window.addEventListener('load', () => navigator.serviceWorker.register('./sw.js').catch(() => {}));
