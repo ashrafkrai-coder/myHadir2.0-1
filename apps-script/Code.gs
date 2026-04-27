@@ -230,7 +230,7 @@ function bacaSheetKelas(sheet, kelasDefault, tarikhTapis) {
       const nama = String(pair[0] || '').trim();
       const kelas = normalKelas(kelasDefault || pair[1] || '');
       const status = String((colStatus[i] && colStatus[i][0]) || '').trim();
-      if (!nama || !kelas || !status) continue;
+      if (!nama || !kelas || !status || isBukanNamaMurid_(nama)) continue;
 
       result.push({
         Nama: nama,
@@ -258,7 +258,7 @@ function bacaSheetKelas(sheet, kelasDefault, tarikhTapis) {
     const rowValues = values[rowIndex];
     const namaMurid = String(rowValues[0] || '').trim();
     const kelasMurid = normalKelas(rowValues[1] || '');
-    if (!namaMurid || !kelasMurid) continue;
+    if (!namaMurid || !kelasMurid || isBukanNamaMurid_(namaMurid)) continue;
 
     for (var colIndex = 0; colIndex < headers.length; colIndex += 1) {
       const header = headers[colIndex];
@@ -362,6 +362,23 @@ function buatMetaSet() {
     set[item] = true;
   });
   return set;
+}
+
+function isBukanNamaMurid_(value) {
+  const text = String(value || '').trim().toLowerCase();
+  if (!text) return true;
+
+  return [
+    'jumlah',
+    'jumlah kehadiran',
+    'jumlah hadir',
+    'jumlah tidak hadir',
+    'total',
+    'grand total',
+    'ringkasan',
+    'statistik',
+    'peratus kehadiran'
+  ].indexOf(text) !== -1;
 }
 
 function normalKelas(value) {
