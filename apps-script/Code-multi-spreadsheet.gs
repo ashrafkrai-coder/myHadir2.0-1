@@ -204,7 +204,7 @@ function bacaSheetKelas(sheet, kelasDefault, tarikhTapis) {
     const nama = String((colNama[i] && colNama[i][0]) || '').trim();
     const kelas = normalKelas(kelasDefault || '');
     const status = String((colStatus[i] && colStatus[i][0]) || '').trim();
-    if (!nama || !kelas || !status) continue;
+    if (!nama || !kelas || !status || isBukanNamaMurid_(nama)) continue;
 
     result.push({
       Nama: nama,
@@ -217,6 +217,23 @@ function bacaSheetKelas(sheet, kelasDefault, tarikhTapis) {
   }
 
   return result;
+}
+
+function isBukanNamaMurid_(value) {
+  const text = String(value || '').trim().toLowerCase();
+  if (!text) return true;
+
+  return [
+    'jumlah',
+    'jumlah kehadiran',
+    'jumlah hadir',
+    'jumlah tidak hadir',
+    'total',
+    'grand total',
+    'ringkasan',
+    'statistik',
+    'peratus kehadiran'
+  ].indexOf(text) !== -1;
 }
 
 function bacaNilaiMeta(row, headers, key) {
