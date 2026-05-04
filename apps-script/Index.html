@@ -1313,6 +1313,23 @@
       return bacaMedan(item, ['Nama', 'nama', 'Nama Murid']);
     }
 
+    function isBukanNamaMurid(value) {
+      const text = String(value || '').trim().toLowerCase();
+      if (!text) return true;
+
+      return [
+        'jumlah',
+        'jumlah kehadiran',
+        'jumlah hadir',
+        'jumlah tidak hadir',
+        'total',
+        'grand total',
+        'ringkasan',
+        'statistik',
+        'peratus kehadiran'
+      ].includes(text);
+    }
+
     function bacaTarikh(item) {
       const raw = bacaMedan(item, ['Tarikh', 'tarikh', 'Tarikh Kehadiran', 'tarikh kehadiran']);
       if (!raw) return '';
@@ -1343,6 +1360,8 @@
     function tukarBarisSheetKeRekod(item, kelasHint = '') {
       if (!item || typeof item !== 'object') return [];
       const kelasAsas = bacaKelas(item) !== 'Tiada Kelas' ? bacaKelas(item) : String(kelasHint || '').trim();
+      const nama = bacaNama(item);
+      if (nama && isBukanNamaMurid(nama)) return [];
       if (adaMedanRekodTerus(item)) {
         return [{
           ...item,
@@ -1350,7 +1369,6 @@
         }];
       }
 
-      const nama = bacaNama(item);
       const kelas = kelasAsas || bacaKelas(item);
       if (!nama && !kelas) return [];
 
@@ -1379,7 +1397,7 @@
     function normalNamaKelas(item) {
       const nama = bacaNama(item);
       const kelas = bacaKelas(item);
-      if (!nama || !kelas || kelas === 'Tiada Kelas') return null;
+      if (!nama || isBukanNamaMurid(nama) || !kelas || kelas === 'Tiada Kelas') return null;
       return { nama, kelas };
     }
 
@@ -1418,7 +1436,7 @@
 
     function semuaMuridGabung() {
       const map = new Map();
-      [...masterMurid, ...dataPenuh]
+      masterMurid
         .map(normalNamaKelas)
         .filter(Boolean)
         .forEach(item => map.set(`${item.nama}||${item.kelas}`, item));
@@ -1621,7 +1639,9 @@
       const tarikhApi = formatTarikhApi(el.filterTarikh.value);
 
       return dataPenuh.filter(item => {
-        const nama = bacaNama(item).toLowerCase();
+        const namaAsal = bacaNama(item);
+        if (isBukanNamaMurid(namaAsal)) return false;
+        const nama = namaAsal.toLowerCase();
         const kelasItem = bacaKelas(item);
         const tarikhItem = bacaTarikh(item);
 
