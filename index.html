@@ -258,6 +258,41 @@
       padding: 12px;
       display: grid;
       gap: 10px;
+      /* Telefon: Nama penuh di atas, Tarikh + Kelas + Refresh sebaris */
+      grid-template-columns: minmax(0, 1.25fr) minmax(0, 1fr) auto;
+      align-items: end;
+    }
+
+    .filters .field:first-child { grid-column: 1 / -1; }
+
+    .btn-refresh {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      width: 44px;
+      padding: 0;
+    }
+
+    .btn-refresh-text { display: none; }
+
+    @media (max-width: 767px) {
+      .filters { gap: 8px; }
+      .filters #filterTarikh,
+      .filters #filterKelas {
+        padding-left: 8px;
+        font-size: .88rem;
+        letter-spacing: 0;
+      }
+      .filters #filterTarikh {
+        padding-right: 6px;
+        background: linear-gradient(160deg, var(--surface-2) 0%, var(--surface) 100%);
+      }
+      .filters #filterTarikh::-webkit-calendar-picker-indicator { width: 0; margin: 0; }
+      .filters #filterKelas {
+        padding-right: 24px;
+        background-position: right 4px center, center;
+      }
     }
 
     .field label { display: block; margin-bottom: 6px; color: var(--muted); font-weight: 600; }
@@ -622,6 +657,9 @@
       details.filter-panel[open] .filters, details.filter-panel .filters { display: grid; }
       .filters { grid-template-columns: 1.4fr 1fr 1fr auto; align-items: end; }
       .filters .field:last-child { width: 140px; }
+      .filters .field:first-child { grid-column: auto; }
+      .btn-refresh { width: 100%; padding: 10px 12px; }
+      .btn-refresh-text { display: inline; }
       .meta-row { padding-top: 6px; }
       .action-row { justify-content: flex-end; }
       .manual-grid { grid-template-columns: 1fr 1fr; }
@@ -711,11 +749,14 @@
           </div>
           <div class="field">
             <label for="filterKelas">Kelas</label>
-            <select id="filterKelas" class="select"><option value="">Semua kelas</option></select>
+            <select id="filterKelas" class="select"><option value="">Semua</option></select>
           </div>
           <div class="field">
             <label>&nbsp;</label>
-            <button id="btnRefresh" class="btn" type="button">Refresh</button>
+            <button id="btnRefresh" class="btn btn-refresh" type="button" aria-label="Refresh" title="Refresh">
+              <span class="material-symbols-outlined" aria-hidden="true">refresh</span>
+              <span class="btn-refresh-text">Refresh</span>
+            </button>
           </div>
         </div>
       </details>
@@ -1547,7 +1588,7 @@
       if (!list.length) {
         list = SENARAI_KELAS_FALLBACK.slice();
       }
-      el.filterKelas.innerHTML = '<option value="">Semua kelas</option>';
+      el.filterKelas.innerHTML = '<option value="">Semua</option>';
       list.forEach(k => {
         const o = document.createElement('option');
         o.value = k;
