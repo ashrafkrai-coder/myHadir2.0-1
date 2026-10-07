@@ -1020,7 +1020,6 @@
         { nama: 'NURSYAFIQAH NADHIRAH BINTI ABDUL RAHIM', url: 'https://VJT5ys.short.gy/0LiSMv' },
         { nama: 'NURUL RASYIQAH BINTI ABDULLAH', url: 'https://VJT5ys.short.gy/RaqPp2' },
         { nama: 'PUTERI INTAN LIYANA BINTI MOHD NOR', url: 'https://VJT5ys.short.gy/BboVYq' },
-        { nama: 'QASEH NURQISTINA BINTI JAMALUDIN', url: 'https://VJT5ys.short.gy/4ZGxun' },
         { nama: 'QISTINA ALESYA BINTI KAMARUZZAMAN', url: 'https://VJT5ys.short.gy/yXUbAn' },
         { nama: 'SYED DANIEL BIN SYED KHAIRUDDIN', url: 'https://VJT5ys.short.gy/jc2gIN' },
         { nama: "U'LYA ADIBAH BINTI AZADEE", url: 'https://VJT5ys.short.gy/QvR2T8' }
@@ -1435,10 +1434,13 @@
     }
 
     function semuaMuridGabung() {
+      // Kelas yang ada dalam PAUTAN_REKOD_PANTAS guna senarai itu sahaja,
+      // supaya nama lama dalam cache tempatan tidak muncul semula.
+      const kelasRasmi = new Set(kelasPautanPantas());
       const map = new Map();
       masterMurid
         .map(normalNamaKelas)
-        .filter(Boolean)
+        .filter(item => item && !kelasRasmi.has(normalKelasLabel(item.kelas)))
         .forEach(item => map.set(`${item.nama}||${item.kelas}`, item));
       return Array.from(map.values());
     }
