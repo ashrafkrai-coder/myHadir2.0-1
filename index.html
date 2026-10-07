@@ -404,6 +404,29 @@
       margin-top: 8px;
     }
 
+    .action-row .btn-ghost {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      white-space: nowrap;
+    }
+
+    .action-row .btn-ghost .material-symbols-outlined { font-size: 20px; }
+
+    .lbl-pendek { display: none; }
+
+    @media (max-width: 767px) {
+      /* Telefon: tiga butang sebaris, label pendek */
+      .action-row {
+        display: grid;
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+      }
+      .action-row .btn-ghost { padding: 8px 6px; font-size: .88rem; gap: 4px; }
+      .lbl-penuh { display: none; }
+      .lbl-pendek { display: inline; }
+    }
+
     .manual-wrap {
       margin-top: 12px;
       padding: 14px;
@@ -763,9 +786,18 @@
       <div class="meta-row">
         <div id="metaData">Menunggu data...</div>
         <div class="action-row">
-          <button id="btnToggleManual" class="btn-ghost" type="button">Input Manual</button>
-          <button id="btnPdf" class="btn-ghost" type="button">Muat Turun PDF</button>
-          <button id="btnPrint" class="btn-ghost" type="button">Cetak</button>
+          <button id="btnToggleManual" class="btn-ghost" type="button" aria-label="Input Manual">
+            <span class="material-symbols-outlined" aria-hidden="true">edit_note</span>
+            <span class="lbl-penuh">Input Manual</span><span class="lbl-pendek">Manual</span>
+          </button>
+          <button id="btnPdf" class="btn-ghost" type="button" aria-label="Muat Turun PDF">
+            <span class="material-symbols-outlined" aria-hidden="true">picture_as_pdf</span>
+            <span class="lbl-penuh">Muat Turun PDF</span><span class="lbl-pendek">PDF</span>
+          </button>
+          <button id="btnPrint" class="btn-ghost" type="button" aria-label="Cetak">
+            <span class="material-symbols-outlined" aria-hidden="true">print</span>
+            <span>Cetak</span>
+          </button>
         </div>
       </div>
     </section>

@@ -1,4 +1,4 @@
-const CACHE_NAME = 'dashboard-kehadiran-v24';
+const CACHE_NAME = 'dashboard-kehadiran-v25';
 const CORE_ASSETS = [
   './',
   './index.html',
