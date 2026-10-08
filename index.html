@@ -258,12 +258,12 @@
       padding: 12px;
       display: grid;
       gap: 10px;
-      /* Telefon: Nama penuh di atas, Tarikh + Kelas + Refresh sebaris */
+      /* Tarikh + Kelas + Refresh sebaris */
       grid-template-columns: minmax(0, 1.25fr) minmax(0, 1fr) auto;
       align-items: end;
     }
 
-    .filters .field:first-child { grid-column: 1 / -1; }
+    .carian-murid { margin-bottom: 12px; }
 
     .btn-refresh {
       display: inline-flex;
@@ -668,6 +668,14 @@
 
     .nav-btn.active { color: var(--brand); }
 
+    /* Telefon: hanya panel tab aktif dipaparkan */
+    @media screen and (max-width: 767px) {
+      [data-panel].tab-hidden { display: none !important; }
+      /* Tab Statistik: carta disusun menegak, bukan tatal ke tepi */
+      .chart-scroll { flex-direction: column; overflow-x: visible; }
+      .chart-card { min-width: 0; }
+    }
+
     @media (min-width: 768px) {
       body { padding-bottom: 24px; }
       .app-logo { width: clamp(50px, 4.2vw, 62px); }
@@ -678,9 +686,9 @@
       details.filter-panel > summary { display: none; }
       details.filter-panel { padding-top: 12px; }
       details.filter-panel[open] .filters, details.filter-panel .filters { display: grid; }
-      .filters { grid-template-columns: 1.4fr 1fr 1fr auto; align-items: end; }
+      .filters { grid-template-columns: 1fr 1fr auto; align-items: end; }
       .filters .field:last-child { width: 140px; }
-      .filters .field:first-child { grid-column: auto; }
+      .carian-murid { max-width: 480px; }
       .btn-refresh { width: 100%; padding: 10px 12px; }
       .btn-refresh-text { display: inline; }
       .meta-row { padding-top: 6px; }
@@ -734,7 +742,7 @@
   </header>
 
   <main class="container">
-    <section class="kpi-grid" aria-label="Ringkasan KPI">
+    <section class="kpi-grid" aria-label="Ringkasan KPI" data-panel="dashboard">
       <article class="surface kpi">
         <div class="kpi-top"><span>Jumlah Murid</span><span class="kpi-icon icon-total material-symbols-outlined">groups</span></div>
         <div class="kpi-value" id="statJumlah">0</div>
@@ -753,19 +761,13 @@
       </article>
     </section>
 
-    <section class="surface filter-wrap">
+    <section class="surface filter-wrap" data-panel="dashboard">
       <details class="filter-panel" open>
         <summary>
           Penapis Carian
           <span class="summary-icon material-symbols-outlined">expand_more</span>
         </summary>
         <div class="filters">
-          <div class="field">
-            <label for="cariNama">Carian Nama Murid</label>
-            <select id="cariNama" class="select">
-              <option value="">Semua murid</option>
-            </select>
-          </div>
           <div class="field">
             <label for="filterTarikh">Tarikh</label>
             <input id="filterTarikh" class="input" type="date">
@@ -802,7 +804,7 @@
       </div>
     </section>
 
-    <section id="manualSection" class="surface manual-wrap hidden" aria-label="Input manual kehadiran">
+    <section id="manualSection" class="surface manual-wrap hidden" aria-label="Input manual kehadiran" data-panel="dashboard">
       <h3 class="manual-head">Input Kehadiran Manual (Guru)</h3>
       <div class="manual-form">
         <div class="manual-grid">
@@ -828,7 +830,7 @@
       </div>
     </section>
 
-    <section class="chart-scroll" aria-label="Statistik Kehadiran">
+    <section class="chart-scroll" aria-label="Statistik Kehadiran" data-panel="statistik">
       <article class="surface chart-card">
         <h3>Agihan Status Kehadiran</h3>
         <div class="chart-box"><canvas id="chartStatus"></canvas></div>
@@ -839,10 +841,16 @@
       </article>
     </section>
 
-    <section class="surface table-wrap" id="muridSection">
+    <section class="surface table-wrap" id="muridSection" data-panel="murid">
       <div class="table-head">
         <h3>Data Murid</h3>
         <div id="rowCount" class="head-meta">0 rekod</div>
+      </div>
+      <div class="field carian-murid">
+        <label for="cariNama">Carian Nama Murid</label>
+        <select id="cariNama" class="select">
+          <option value="">Semua murid</option>
+        </select>
       </div>
       <div class="table-scroll">
         <table>
@@ -862,9 +870,9 @@
   </main>
 
   <nav class="bottom-nav" aria-label="Navigasi bawah">
-    <button class="nav-btn active" type="button"><span class="material-symbols-outlined">dashboard</span>Dashboard</button>
-    <button class="nav-btn" type="button" onclick="document.querySelector('.chart-scroll').scrollIntoView({behavior:'smooth'})"><span class="material-symbols-outlined">query_stats</span>Statistik</button>
-    <button class="nav-btn" type="button" onclick="document.getElementById('muridSection').scrollIntoView({behavior:'smooth'})"><span class="material-symbols-outlined">groups</span>Murid</button>
+    <button class="nav-btn active" type="button" data-tab="dashboard"><span class="material-symbols-outlined">dashboard</span>Dashboard</button>
+    <button class="nav-btn" type="button" data-tab="statistik"><span class="material-symbols-outlined">query_stats</span>Statistik</button>
+    <button class="nav-btn" type="button" data-tab="murid"><span class="material-symbols-outlined">groups</span>Murid</button>
     <button class="nav-btn" type="button"><span class="material-symbols-outlined">settings</span>Tetapan</button>
   </nav>
 
@@ -2159,8 +2167,36 @@
       });
     }
 
+    function tukarTab(tab) {
+      document.querySelectorAll('[data-panel]').forEach(panel => {
+        panel.classList.toggle('tab-hidden', panel.dataset.panel !== tab);
+      });
+      document.querySelectorAll('.nav-btn[data-tab]').forEach(btn => {
+        btn.classList.toggle('active', btn.dataset.tab === tab);
+      });
+      // Carta dilukis semasa tersembunyi, jadi saiz semula bila dipaparkan.
+      if (tab === 'statistik') {
+        requestAnimationFrame(() => {
+          [chartStatus, chartKelas].forEach(chart => {
+            if (!chart) return;
+            chart.resize();
+            chart.update('none');
+          });
+        });
+      }
+      window.scrollTo({ top: 0 });
+    }
+
+    function initTab() {
+      document.querySelectorAll('.nav-btn[data-tab]').forEach(btn => {
+        btn.addEventListener('click', () => tukarTab(btn.dataset.tab));
+      });
+      tukarTab('dashboard');
+    }
+
     function init() {
       masterMurid = bacaMasterMurid();
+      initTab();
       el.filterTarikh.value = hariIniIso();
       formatMasaKini();
       setInterval(formatMasaKini, 1000);
