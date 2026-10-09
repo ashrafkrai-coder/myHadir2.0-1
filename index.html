@@ -762,29 +762,6 @@
     </section>
 
     <section class="surface filter-wrap" data-panel="dashboard">
-      <details class="filter-panel" open>
-        <summary>
-          Penapis Carian
-          <span class="summary-icon material-symbols-outlined">expand_more</span>
-        </summary>
-        <div class="filters">
-          <div class="field">
-            <label for="filterTarikh">Tarikh</label>
-            <input id="filterTarikh" class="input" type="date">
-          </div>
-          <div class="field">
-            <label for="filterKelas">Kelas</label>
-            <select id="filterKelas" class="select"><option value="">Semua</option></select>
-          </div>
-          <div class="field">
-            <label>&nbsp;</label>
-            <button id="btnRefresh" class="btn btn-refresh" type="button" aria-label="Refresh" title="Refresh">
-              <span class="material-symbols-outlined" aria-hidden="true">refresh</span>
-              <span class="btn-refresh-text">Refresh</span>
-            </button>
-          </div>
-        </div>
-      </details>
       <div class="meta-row">
         <div id="metaData">Menunggu data...</div>
         <div class="action-row">
@@ -846,6 +823,29 @@
         <h3>Data Murid</h3>
         <div id="rowCount" class="head-meta">0 rekod</div>
       </div>
+      <details class="filter-panel" open>
+        <summary>
+          Penapis Carian
+          <span class="summary-icon material-symbols-outlined">expand_more</span>
+        </summary>
+        <div class="filters">
+          <div class="field">
+            <label for="filterTarikh">Tarikh</label>
+            <input id="filterTarikh" class="input" type="date">
+          </div>
+          <div class="field">
+            <label for="filterKelas">Kelas</label>
+            <select id="filterKelas" class="select"><option value="">Semua</option></select>
+          </div>
+          <div class="field">
+            <label>&nbsp;</label>
+            <button id="btnRefresh" class="btn btn-refresh" type="button" aria-label="Refresh" title="Refresh">
+              <span class="material-symbols-outlined" aria-hidden="true">refresh</span>
+              <span class="btn-refresh-text">Refresh</span>
+            </button>
+          </div>
+        </div>
+      </details>
       <div class="field carian-murid">
         <label for="cariNama">Carian Nama Murid</label>
         <select id="cariNama" class="select">
@@ -1825,6 +1825,12 @@
     }
 
     function renderTable(rows) {
+      if (!el.filterKelas.value) {
+        el.rowCount.textContent = '0 rekod';
+        el.tableBody.innerHTML = '<tr><td colspan="3" class="empty">Sila pilih kelas untuk memaparkan senarai murid.</td></tr>';
+        return;
+      }
+
       const sorted = sortRows(rows);
       el.rowCount.textContent = `${sorted.length} rekod`;
 
