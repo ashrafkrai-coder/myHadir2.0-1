@@ -152,19 +152,14 @@
     .head-meta { margin: 0; color: var(--muted); font-size: .78rem; }
 
     .network {
-      min-height: 44px;
-      border: 1px solid var(--line);
-      border-radius: 999px;
-      padding: 8px 12px;
-      display: inline-flex;
-      align-items: center;
-      gap: 6px;
-      font-weight: 600;
-      background: linear-gradient(135deg, #123558 0%, #102e4b 100%);
+      width: 12px;
+      height: 12px;
+      border-radius: 50%;
+      flex: none;
     }
 
-    .network.online { color: #9ef1d3; border-color: #2d7d70; background: linear-gradient(135deg, #15453f 0%, #145046 100%); }
-    .network.offline { color: #ffc3ab; border-color: #874f3f; background: linear-gradient(135deg, #4b2a24 0%, #5a3329 100%); }
+    .network.online { background: #22c55e; box-shadow: 0 0 0 3px rgba(34, 197, 94, .25); }
+    .network.offline { background: #ef4444; box-shadow: 0 0 0 3px rgba(239, 68, 68, .25); }
 
     .head-right {
       display: flex;
@@ -732,10 +727,7 @@
         <p class="head-meta" id="masaKini">Memuatkan tarikh & masa...</p>
       </div>
       <div class="head-right">
-        <div id="statusNetwork" class="network online" role="status" aria-live="polite">
-          <span class="material-symbols-outlined">wifi</span>
-          <span>Online</span>
-        </div>
+        <div id="statusNetwork" class="network online" role="status" aria-live="polite" aria-label="Online" title="Online"></div>
         <img src="logo-sekolah.jpg" alt="Logo Sekolah" class="school-logo-head">
       </div>
     </div>
@@ -804,6 +796,13 @@
       </div>
       <div id="manualQuickLinks" class="quick-links hidden" aria-live="polite">
         <div id="manualQuickLinksList" class="quick-links-list"></div>
+      </div>
+    </section>
+
+    <section class="surface filter-wrap" data-panel="statistik">
+      <div class="field">
+        <label for="statKelas">Kelas</label>
+        <select id="statKelas" class="select"><option value="">Semua kelas</option></select>
       </div>
     </section>
 
@@ -1211,6 +1210,7 @@
       cariNama: document.getElementById('cariNama'),
       filterTarikh: document.getElementById('filterTarikh'),
       filterKelas: document.getElementById('filterKelas'),
+      statKelas: document.getElementById('statKelas'),
       btnRefresh: document.getElementById('btnRefresh'),
       metaData: document.getElementById('metaData'),
       rowCount: document.getElementById('rowCount'),
@@ -1305,12 +1305,11 @@
     }
 
     function setNetworkUI(online) {
-      const icon = el.statusNetwork.querySelector('.material-symbols-outlined');
-      const label = el.statusNetwork.querySelector('span:last-child');
+      const label = online ? 'Online' : 'Offline';
       el.statusNetwork.classList.toggle('online', online);
       el.statusNetwork.classList.toggle('offline', !online);
-      icon.textContent = online ? 'wifi' : 'wifi_off';
-      label.textContent = online ? 'Online' : 'Offline';
+      el.statusNetwork.setAttribute('aria-label', label);
+      el.statusNetwork.title = label;
     }
 
     function toast(msg, kind = 'ok') {
@@ -1629,6 +1628,10 @@
         list = SENARAI_KELAS_FALLBACK.slice();
       }
       el.filterKelas.innerHTML = '<option value="">Semua</option>';
+      const statSemasa = el.statKelas.value;
+      el.statKelas.innerHTML = '<option value="">Semua kelas</option>';
+      list.forEach(k => el.statKelas.add(new Option(k, k)));
+      if (list.includes(statSemasa)) el.statKelas.value = statSemasa;
       list.forEach(k => {
         const o = document.createElement('option');
         o.value = k;
@@ -1728,9 +1731,9 @@
       el.manualQuickLinks.classList.remove('hidden');
     }
 
-    function rowsDitapisAsas() {
-      const q = el.cariNama.value.trim().toLowerCase();
-      const kelas = el.filterKelas.value;
+    function rowsDitapisAsas(opsyen = {}) {
+      const q = opsyen.kelas !== undefined ? "" : el.cariNama.value.trim().toLowerCase();
+      const kelas = opsyen.kelas !== undefined ? opsyen.kelas : el.filterKelas.value;
       const tarikhApi = formatTarikhApi(el.filterTarikh.value);
 
       return dataPenuh.filter(item => {
@@ -1747,9 +1750,9 @@
       });
     }
 
-    function rowsPaparanDitapis() {
-      const q = el.cariNama.value.trim().toLowerCase();
-      const kelasDipilih = el.filterKelas.value;
+    function rowsPaparanDitapis(opsyen = {}) {
+      const q = opsyen.kelas !== undefined ? "" : el.cariNama.value.trim().toLowerCase();
+      const kelasDipilih = opsyen.kelas !== undefined ? opsyen.kelas : el.filterKelas.value;
       const tarikhApi = formatTarikhApi(el.filterTarikh.value);
       const roster = [...semuaMuridGabung(), ...semuaMuridPautan()];
       const mapPaparan = new Map();
@@ -1768,7 +1771,7 @@
           });
         });
 
-      rowsDitapisAsas().forEach(item => {
+      rowsDitapisAsas(opsyen).forEach(item => {
         const nama = bacaNama(item) || '-';
         const kelas = bacaKelas(item);
         const key = `${nama}||${kelas}`;
@@ -1793,9 +1796,9 @@
       });
     }
 
-    function rowsDitapis() {
-      const rowsPaparan = rowsPaparanDitapis();
-      return rowsPaparan.length ? rowsPaparan : rowsDitapisAsas();
+    function rowsDitapis(opsyen = {}) {
+      const rowsPaparan = rowsPaparanDitapis(opsyen);
+      return rowsPaparan.length ? rowsPaparan : rowsDitapisAsas(opsyen);
     }
 
     function sortRows(rows) {
@@ -1975,7 +1978,7 @@
       const rows = rowsDitapis();
       renderKpi(rows);
       renderTable(rows);
-      renderCharts(rows);
+      renderCharts(rowsDitapis({ kelas: el.statKelas.value }));
     }
 
     function paparFallbackTempatan() {
@@ -2213,6 +2216,7 @@
 
       el.btnRefresh.addEventListener('click', () => ambilData({ force: true }));
       el.cariNama.addEventListener('change', renderSemua);
+      el.statKelas.addEventListener('change', renderSemua);
       el.filterKelas.addEventListener('change', () => {
         isiPilihanNamaCarian();
         renderSemua();
