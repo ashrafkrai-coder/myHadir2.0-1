@@ -100,7 +100,7 @@
       min-height: 72px;
       display: flex;
       justify-content: space-between;
-      align-items: center;
+      align-items: flex-start;
       gap: 12px;
       padding: 10px 0;
     }
@@ -122,8 +122,8 @@
     }
 
     .app-logo {
-      width: clamp(40px, 10vw, 56px);
-      height: auto;
+      width: clamp(46px, 10vw, 56px);
+      height: clamp(46px, 10vw, 56px);
       object-fit: contain;
       display: block;
       max-width: 100%;
@@ -150,6 +150,9 @@
       overflow: hidden;
     }
     .head-meta { margin: 0; color: var(--muted); font-size: .78rem; }
+    @media (max-width: 767px) {
+      .head-meta .mk-tarikh, .head-meta .mk-masa { display: block; }
+    }
 
     .network {
       width: 12px;
@@ -161,6 +164,8 @@
     .network.online { background: #22c55e; box-shadow: 0 0 0 3px rgba(34, 197, 94, .25); }
     .network.offline { background: #ef4444; box-shadow: 0 0 0 3px rgba(239, 68, 68, .25); }
 
+    .stat-filters { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+
     .head-right {
       display: flex;
       align-items: center;
@@ -169,8 +174,8 @@
     }
 
     .school-logo-head {
-      width: clamp(46px, 8vw, 60px);
-      height: auto;
+      width: clamp(46px, 10vw, 56px);
+      height: clamp(46px, 10vw, 56px);
       object-fit: contain;
       display: block;
       background: rgba(255, 255, 255, 0.95);
@@ -673,7 +678,7 @@
 
     @media (min-width: 768px) {
       body { padding-bottom: 24px; }
-      .app-logo { width: clamp(50px, 4.2vw, 62px); }
+      .app-logo, .school-logo-head { width: clamp(50px, 4.2vw, 62px); height: clamp(50px, 4.2vw, 62px); }
       .app-name { font-size: 1.08rem; }
       .app-tagline { font-size: .8rem; }
       .head-meta { font-size: .82rem; }
@@ -800,9 +805,15 @@
     </section>
 
     <section class="surface filter-wrap" data-panel="statistik">
-      <div class="field">
-        <label for="statKelas">Kelas</label>
-        <select id="statKelas" class="select"><option value="">Semua kelas</option></select>
+      <div class="stat-filters">
+        <div class="field">
+          <label for="statTarikh">Tarikh</label>
+          <input id="statTarikh" class="input" type="date">
+        </div>
+        <div class="field">
+          <label for="statKelas">Kelas</label>
+          <select id="statKelas" class="select"><option value="">Semua kelas</option></select>
+        </div>
       </div>
     </section>
 
@@ -1211,6 +1222,7 @@
       filterTarikh: document.getElementById('filterTarikh'),
       filterKelas: document.getElementById('filterKelas'),
       statKelas: document.getElementById('statKelas'),
+      statTarikh: document.getElementById('statTarikh'),
       btnRefresh: document.getElementById('btnRefresh'),
       metaData: document.getElementById('metaData'),
       rowCount: document.getElementById('rowCount'),
@@ -1285,11 +1297,9 @@
 
     function formatMasaKini() {
       const now = new Date();
-      const text = now.toLocaleString('ms-MY', {
-        weekday: 'long', day: '2-digit', month: 'long', year: 'numeric',
-        hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: true
-      });
-      el.masaKini.textContent = text;
+      const tarikh = now.toLocaleDateString('ms-MY', { weekday: 'long', day: '2-digit', month: 'long', year: 'numeric' });
+      const masa = now.toLocaleTimeString('ms-MY', { hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: true });
+      el.masaKini.innerHTML = `<span class="mk-tarikh">${tarikh}</span> <span class="mk-masa">${masa}</span>`;
     }
 
     function bukaPemilihTarikh() {
@@ -2207,6 +2217,7 @@
       masterMurid = bacaMasterMurid();
       initTab();
       el.filterTarikh.value = hariIniIso();
+      el.statTarikh.value = el.filterTarikh.value;
       formatMasaKini();
       setInterval(formatMasaKini, 1000);
 
@@ -2221,7 +2232,14 @@
         isiPilihanNamaCarian();
         renderSemua();
       });
-      el.filterTarikh.addEventListener('change', () => ambilData({ force: true }));
+      el.filterTarikh.addEventListener('change', () => {
+        el.statTarikh.value = el.filterTarikh.value;
+        ambilData({ force: true });
+      });
+      el.statTarikh.addEventListener('change', () => {
+        el.filterTarikh.value = el.statTarikh.value;
+        ambilData({ force: true });
+      });
       el.filterTarikh.addEventListener('click', bukaPemilihTarikh);
       el.filterTarikh.addEventListener('keydown', ev => {
         if (ev.key === 'Enter' || ev.key === ' ') {
